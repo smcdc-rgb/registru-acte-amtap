@@ -82,6 +82,18 @@ a{text-decoration:none;color:inherit}
 .welcome-box h3{font-size:15px;font-weight:600;color:var(--navy);margin-bottom:6px}
 .welcome-box p{font-size:13px;line-height:1.6}
 .empty-state{display:none;text-align:center;padding:4rem 2rem;color:var(--gray-soft)}
+.alert-box{background:#FEF3C7;border:1px solid #F59E0B;border-left:4px solid #F59E0B;border-radius:var(--radius);padding:12px 16px;margin-bottom:1.25rem;display:none}
+.alert-box-header{display:flex;align-items:center;justify-content:space-between;cursor:pointer;gap:8px}
+.alert-box-title{font-size:13px;font-weight:600;color:#92400E;display:flex;align-items:center;gap:7px}
+.alert-count{background:#F59E0B;color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px}
+.alert-toggle{font-size:12px;color:#92400E;cursor:pointer;white-space:nowrap}
+.alert-list{margin-top:10px;display:none;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px}
+.alert-list.open{display:grid}
+.alert-item{background:#fff;border:1px solid #FCD34D;border-radius:var(--radius-sm);padding:8px 10px;font-size:12px}
+.alert-item .a-cod{font-family:"JetBrains Mono",monospace;font-size:10px;font-weight:600;color:#92400E;background:#FEF3C7;padding:1px 5px;border-radius:3px;margin-bottom:4px;display:inline-block}
+.alert-item .a-title{color:#111827;font-weight:500;line-height:1.4;margin-bottom:4px}
+.alert-item .a-exp{color:#B45309;font-size:11px}
+.badge-expira{font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;background:#FEF3C7;color:#92400E;border:1px solid #FCD34D;margin-left:4px;vertical-align:middle}
 .empty-state p{font-size:14px;margin-top:12px}
 .results-label{font-size:12px;color:var(--gray-soft);margin-left:auto}
 .site-footer{background:var(--navy);color:rgba(255,255,255,.6);margin-top:3rem;padding:1.25rem 2rem;font-size:12px}
@@ -117,6 +129,17 @@ a{text-decoration:none;color:inherit}
   <div class="loading" id="loading"><div class="spinner"></div><p>Se încarcă datele din Google Sheets...</p></div>
   <div id="app" style="display:none">
     <div class="stats-bar" id="sb"></div>
+    <div class="alert-box" id="alert-box">
+      <div class="alert-box-header" onclick="toggleAlert()">
+        <div class="alert-box-title">
+          <span>⚠️</span>
+          <span>Documente care expiră în următoarele 90 de zile</span>
+          <span class="alert-count" id="alert-count">0</span>
+        </div>
+        <span class="alert-toggle" id="alert-toggle">▼ Afișează</span>
+      </div>
+      <div class="alert-list" id="alert-list"></div>
+    </div>
     <div class="filters-row">
       <div class="filter-group"><label>Categorie</label><select id="f-cat"><option value="">Toate categoriile</option></select></div>
       <div class="filter-group"><label>Stare</label><select id="f-st"><option value="">Toate stările</option><option>In vigoare</option><option>Expirat</option><option>Revizuit</option><option>Arhivat</option></select></div>
@@ -151,6 +174,44 @@ function parseDate(d){
   return 0;
 }
 
+function toggleAlert(){
+  const list = document.getElementById('alert-list');
+  const tog = document.getElementById('alert-toggle');
+  list.classList.toggle('open');
+  tog.textContent = list.classList.contains('open') ? '▲ Ascunde' : '▼ Afișează';
+}
+
+function checkExpiring(data){
+  const now = new Date(); now.setHours(0,0,0,0);
+  const limit = new Date(now); limit.setDate(limit.getDate()+90);
+  const exp = data.filter(r=>{
+    if(r.stare==='Expirat'||r.stare==='Arhivat')return false;
+    const ts = parseDate(r.expirare);
+    if(!ts)return false;
+    const d = new Date(ts);
+    return d >= now && d <= limit;
+  }).sort((a,b)=>parseDate(a.expirare)-parseDate(b.expirare));
+
+  const box = document.getElementById('alert-box');
+  const cnt = document.getElementById('alert-count');
+  const list = document.getElementById('alert-list');
+
+  if(!exp.length){box.style.display='none';return;}
+
+  cnt.textContent = exp.length;
+  box.style.display = 'block';
+  list.innerHTML = exp.map(r=>{
+    const ts = parseDate(r.expirare);
+    const days = Math.ceil((ts - now.getTime())/(1000*60*60*24));
+    const urgency = days<=30?'#DC2626':days<=60?'#D97706':'#92400E';
+    return '<div class="alert-item">'
+      +(r.cod?'<span class="a-cod">'+r.cod+'</span>':'')
+      +'<div class="a-title">'+r.denumire+'</div>'
+      +'<div class="a-exp" style="color:'+urgency+'">⏳ Expiră la '+r.expirare+' <strong>('+days+' zile)</strong></div>'
+      +'</div>';
+  }).join('');
+}
+
 function pf(d){
   const cats=[...new Set(d.map(r=>r.categorie).filter(Boolean))].sort();
   const fc=document.getElementById('f-cat');
@@ -159,7 +220,7 @@ function pf(d){
 }
 
 function show(d,msg){
-  DATA=d;pf(d);
+  DATA=d;pf(d);checkExpiring(d);
   document.getElementById('sync-t').textContent=msg;
   document.getElementById('fc').textContent=d.length+' documente in registru';
   document.getElementById('loading').style.display='none';
@@ -261,7 +322,15 @@ function buildCards(data){
       +(r.structura?'<span>&#127963; '+r.structura+'</span>':'')
       +(r.editie?'<span class="editie-tag">ed.'+r.editie+'</span>':'')
       +'</div><div class="card-footer">'
-      +'<span class="stare-tag '+sc+'">'+r.stare+'</span>'
+      +'<span class="stare-tag '+sc+'">'+r.stare+(()=>{
+      const ts=parseDate(r.expirare);
+      if(!ts)return '';
+      const now=new Date();now.setHours(0,0,0,0);
+      const days=Math.ceil((ts-now.getTime())/(1000*60*60*24));
+      if(days>0&&days<=90&&r.stare!=='Expirat'&&r.stare!=='Arhivat')
+        return '<span class="badge-expira">⚠ '+days+'z</span>';
+      return '';
+    })()+'</span>'
       +(se?'<span class="exp-date">&#9203; '+r.expirare+'</span>':'')
       +(r.link?'<a class="card-link" href="'+r.link+'" target="_blank" rel="noopener">&#128279; Deschide</a>'
               :'<span class="card-link no-link">Fara link</span>')
