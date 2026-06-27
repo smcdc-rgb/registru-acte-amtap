@@ -85,6 +85,28 @@ a{text-decoration:none;color:inherit}
 .welcome-box h3{font-size:15px;font-weight:600;color:var(--navy);margin-bottom:6px}
 .welcome-box p{font-size:13px;line-height:1.6}
 .empty-state{display:none;text-align:center;padding:4rem 2rem;color:var(--gray-soft)}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center;padding:1rem}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:var(--radius);max-width:620px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.modal-header{background:var(--navy);padding:1.25rem 1.5rem;display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;border-radius:var(--radius) var(--radius) 0 0}
+.modal-header-text{}
+.modal-cod{font-family:"JetBrains Mono",monospace;font-size:11px;color:rgba(255,255,255,.7);margin-bottom:4px}
+.modal-title{font-family:"PT Serif",serif;font-size:16px;font-weight:700;color:#fff;line-height:1.4}
+.modal-close{background:rgba(255,255,255,.15);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s}
+.modal-close:hover{background:rgba(255,255,255,.3)}
+.modal-body{padding:1.5rem}
+.modal-stare{display:inline-flex;align-items:center;gap:8px;margin-bottom:1.25rem}
+.modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1.25rem}
+.modal-field{background:#F9FAFB;border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px}
+.modal-field label{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--gray-soft);display:block;margin-bottom:4px}
+.modal-field span{font-size:13px;color:var(--text);font-weight:500;display:block;line-height:1.4}
+.modal-field.full{grid-column:1/-1}
+.modal-actions{display:flex;gap:8px;padding-top:1rem;border-top:1px solid var(--border)}
+.btn-primary{display:flex;align-items:center;gap:6px;background:var(--navy);color:#fff;border:none;border-radius:var(--radius-sm);padding:8px 16px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;text-decoration:none;transition:background .15s}
+.btn-primary:hover{background:#002D5C}
+.btn-secondary{display:flex;align-items:center;gap:6px;background:#fff;color:var(--navy);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 16px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .15s}
+.btn-secondary:hover{background:var(--gray-light)}
+.card{cursor:pointer}
 .view-toggle{display:flex;align-items:center;gap:4px;margin-left:auto;background:#fff;border:1px solid var(--border);border-radius:var(--radius-sm);padding:3px}
 .view-btn{background:none;border:none;border-radius:4px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--gray-soft);display:flex;align-items:center;gap:5px;transition:all .15s;font-family:inherit}
 .view-btn.active{background:var(--navy);color:#fff}
@@ -183,6 +205,42 @@ a{text-decoration:none;color:inherit}
     <div class="empty-state" id="empty"><span style="font-size:42px;color:#9CA3AF"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span><p>Nicio înregistrare nu corespunde filtrelor selectate.</p></div>
   </div>
 </main>
+
+<!-- MODAL FISA INDIVIDUALA -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal" id="modal">
+    <div class="modal-header">
+      <div class="modal-header-text">
+        <div class="modal-cod" id="m-cod"></div>
+        <div class="modal-title" id="m-title"></div>
+      </div>
+      <button class="modal-close" onclick="closeModalDirect()">&#x2715;</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-stare">
+        <span class="stare-tag" id="m-stare-tag"></span>
+        <span id="m-exp-badge"></span>
+      </div>
+      <div class="modal-grid">
+        <div class="modal-field"><label>Categorie</label><span id="m-cat"></span></div>
+        <div class="modal-field"><label>Ediție / Revizie</label><span id="m-editie"></span></div>
+        <div class="modal-field"><label>Data aprobării</label><span id="m-data"></span></div>
+        <div class="modal-field"><label>Data expirării</label><span id="m-expirare"></span></div>
+        <div class="modal-field"><label>Nr. Proces Verbal</label><span id="m-pv"></span></div>
+        <div class="modal-field"><label>Structura aprobatoare</label><span id="m-struct"></span></div>
+        <div class="modal-field full"><label>Persoana responsabilă</label><span id="m-persoana"></span></div>
+      </div>
+      <div class="modal-actions">
+        <a class="btn-primary" id="m-link" href="#" target="_blank" rel="noopener">&#128279; Deschide documentul</a>
+        <button class="btn-secondary" onclick="printFisa()">&#128438; Tipărește fișa</button>
+        <button class="btn-secondary" id="m-copy-btn" onclick="copyModalLink()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+          Copiază link
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 <footer class="site-footer"><div class="footer-inner"><span>&copy; <span id="yr"></span> Academia de Muzică, Teatru şi Arte Plastice &mdash; Republica Moldova</span><span id="fc"></span></div></footer>
 <script>
 const CSV='https://docs.google.com/spreadsheets/d/e/2PACX-1vRvH0CfmR7M2JvPDQ6h1xugYL8DJaveMV2gcbjZ_xqrOHn8n4OHsOuYv9AI-OjqUQ/pub?gid=2117880652&single=true&output=csv';
@@ -378,11 +436,11 @@ function buildCards(data){
     }
     // Buton copiere link folosind data-attribute
     const linkHtml = r.link
-      ? '<a class="card-link" href="'+r.link+'" target="_blank" rel="noopener">&#128279; Deschide</a>'
+      ? '<a class="card-link" href="'+r.link+'" target="_blank" rel="noopener" onclick="event.stopPropagation()">&#128279; Deschide</a>'
         +'<button class="btn-copy" data-url="'+r.link+'" onclick="copyLink(this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>'
       : '<span class="card-link no-link">F&#259;r&#259; link</span>';
 
-    return '<div class="card">'
+    return '<div class="card" onclick="openModal('+i+')" title="Click pentru fișă detaliată">'
       +'<div class="card-head">'
       +(r.cod?'<span class="card-cod">'+r.cod+'</span>':'')
       +'<div class="card-title">'+r.denumire+'</div>'
@@ -523,7 +581,7 @@ function buildTable(data){
       if(days>0&&days<=90&&r.stare!=='Expirat'&&r.stare!=='Arhivat')
         expBadge = ' <span class="badge-expira">&#9888; '+days+'z</span>';
     }
-    return '<tr>'
+    return '<tr style="cursor:pointer" onclick="openModal('+i+')" title="Click pentru fișă detaliată">'
       +'<td style="color:#9CA3AF;font-size:11px">'+( i+1)+'</td>'
       +'<td>'+(r.cod?'<span class="t-cod">'+r.cod+'</span>':'<span style="color:#ccc">—</span>')+'</td>'
       +'<td class="t-den">'+r.denumire+'</td>'
@@ -541,6 +599,132 @@ function buildTable(data){
       +'</tr>';
   }).join('');
 }
+
+
+let currentDoc = null;
+
+function openModal(idx){
+  const r = (currentView==='cards'
+    ? (isActive() ? fd() : [...DATA].sort((a,b)=>parseDate(b.data)-parseDate(a.data)).slice(0,12))
+    : (isActive() ? fd() : [...DATA].sort((a,b)=>parseDate(b.data)-parseDate(a.data)).slice(0,12))
+  )[idx];
+  if(!r) return;
+  currentDoc = r;
+
+  document.getElementById('m-cod').textContent = r.cod || '—';
+  document.getElementById('m-title').textContent = r.denumire;
+  document.getElementById('m-cat').textContent = r.categorie || '—';
+  document.getElementById('m-editie').textContent = r.editie || '—';
+  document.getElementById('m-data').textContent = r.data || '—';
+  document.getElementById('m-expirare').textContent = r.expirare || '—';
+  document.getElementById('m-pv').textContent = r.pv || '—';
+  document.getElementById('m-struct').textContent = r.structura || '—';
+  document.getElementById('m-persoana').textContent = r.persoana || '—';
+
+  // Stare badge
+  const sc = SC[r.stare]||'s-alt';
+  const stareEl = document.getElementById('m-stare-tag');
+  stareEl.textContent = r.stare;
+  stareEl.className = 'stare-tag ' + sc;
+
+  // Badge expira curand
+  const expBadge = document.getElementById('m-exp-badge');
+  expBadge.innerHTML = '';
+  const ts = parseDate(r.expirare);
+  if(ts){
+    const now = new Date(); now.setHours(0,0,0,0);
+    const days = Math.ceil((ts-now.getTime())/(1000*60*60*24));
+    if(days>0&&days<=90&&r.stare!=='Expirat'&&r.stare!=='Arhivat')
+      expBadge.innerHTML = '<span class="badge-expira" style="font-size:12px;padding:3px 8px;">&#9888; Expiră în '+days+' zile</span>';
+  }
+
+  // Link
+  const linkEl = document.getElementById('m-link');
+  if(r.link){
+    linkEl.href = r.link;
+    linkEl.style.opacity = '1';
+    linkEl.style.pointerEvents = 'auto';
+  } else {
+    linkEl.href = '#';
+    linkEl.style.opacity = '.4';
+    linkEl.style.pointerEvents = 'none';
+  }
+
+  document.getElementById('modal-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal(e){
+  if(e.target === document.getElementById('modal-overlay')) closeModalDirect();
+}
+
+function closeModalDirect(){
+  document.getElementById('modal-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function copyModalLink(){
+  if(!currentDoc||!currentDoc.link){alert('Documentul nu are link.');return;}
+  const btn = document.getElementById('m-copy-btn');
+  navigator.clipboard.writeText(currentDoc.link).then(()=>{
+    btn.textContent='✓ Copiat!';
+    setTimeout(()=>{btn.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> Copiază link';},2000);
+  }).catch(()=>{alert('Nu s-a putut copia.');});
+}
+
+function printFisa(){
+  if(!currentDoc) return;
+  const r = currentDoc;
+  const win = window.open('','_blank');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <title>Fișă — ${r.cod||r.denumire}</title>
+  <style>
+    body{font-family:Arial,sans-serif;margin:30px;color:#111;max-width:700px}
+    .header{border-bottom:3px solid #002147;padding-bottom:12px;margin-bottom:20px;display:flex;align-items:center;gap:16px}
+    .header-text h1{font-size:13px;color:#002147;margin:0 0 2px}
+    .header-text p{font-size:11px;color:#666;margin:0}
+    h2{font-size:15px;color:#002147;margin:0 0 4px}
+    .cod{font-family:monospace;font-size:11px;color:#666;background:#f0f4f8;padding:2px 6px;border-radius:3px;display:inline-block;margin-bottom:10px}
+    .badge{display:inline-block;padding:3px 10px;border-radius:3px;font-size:11px;font-weight:bold}
+    .vig{background:#D1FAE5;color:#0A6640}.exp{background:#FEE2E2;color:#9B1C1C}
+    .rev{background:#EBF2FF;color:#002147}.arh{background:#F3F4F6;color:#374151}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0}
+    .field{background:#f9fafb;border:1px solid #e5e7eb;border-radius:4px;padding:8px 10px}
+    .field label{font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:#6b7280;display:block;margin-bottom:3px}
+    .field span{font-size:12px;font-weight:500}
+    .full{grid-column:1/-1}
+    .footer{margin-top:20px;font-size:10px;color:#9CA3AF;border-top:1px solid #eee;padding-top:8px;text-align:right}
+    @media print{body{margin:15px}}
+  </style></head><body>
+  <div class="header">
+    <div class="header-text">
+      <h1>Academia de Muzică, Teatru și Arte Plastice</h1>
+      <p>Secția Managementul Calității și Dezvoltare Curriculară — SMCDC</p>
+    </div>
+  </div>
+  <div class="cod">${r.cod||'—'}</div>
+  <h2>${r.denumire}</h2>
+  <div style="margin:10px 0">
+    <span class="badge ${r.stare==='In vigoare'?'vig':r.stare==='Expirat'?'exp':r.stare==='Revizuit'?'rev':'arh'}">${r.stare}</span>
+  </div>
+  <div class="grid">
+    <div class="field"><label>Categorie</label><span>${r.categorie||'—'}</span></div>
+    <div class="field"><label>Ediție / Revizie</label><span>${r.editie||'—'}</span></div>
+    <div class="field"><label>Data aprobării</label><span>${r.data||'—'}</span></div>
+    <div class="field"><label>Data expirării</label><span>${r.expirare||'—'}</span></div>
+    <div class="field"><label>Nr. Proces Verbal</label><span>${r.pv||'—'}</span></div>
+    <div class="field"><label>Structura aprobatoare</label><span>${r.structura||'—'}</span></div>
+    <div class="field full"><label>Persoana responsabilă</label><span>${r.persoana||'—'}</span></div>
+    ${r.link?'<div class="field full"><label>Link document</label><span style="word-break:break-all;color:#002147">'+r.link+'</span></div>':''}
+  </div>
+  <div class="footer">Fișă generată la ${new Date().toLocaleDateString('ro-RO')} — Registrul actelor normative interne AMTAP</div>
+  <script>window.onload=function(){window.print();}<\/script>
+  </body></html>`);
+  win.document.close();
+}
+
+// Tastatura ESC inchide modalul
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeModalDirect(); });
 
 document.getElementById('srch').addEventListener('input',render);
 ['f-cat','f-st','f-yr'].forEach(id=>document.getElementById(id).addEventListener('change',render));
