@@ -49,6 +49,8 @@ a{text-decoration:none;color:inherit}
 .filter-group select{border:none;outline:none;background:transparent;font-size:13px;color:var(--text);cursor:pointer;font-family:inherit}
 .btn-reset{display:flex;align-items:center;gap:5px;background:none;border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 12px;font-size:12px;color:var(--gray-soft);cursor:pointer;font-family:inherit}
 .btn-reset:hover{background:#F3F4F6}
+.btn-export{display:flex;align-items:center;gap:5px;background:#002147;border:none;border-radius:var(--radius-sm);padding:7px 14px;font-size:12px;color:#fff;cursor:pointer;font-family:inherit;font-weight:500}
+.btn-export:hover{background:#002D5C}
 .cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:10px}
 .card{background:var(--card-bg);border:1px solid var(--border);border-top:3px solid transparent;border-radius:var(--radius);padding:1rem 1.125rem;display:flex;flex-direction:column;gap:8px;box-shadow:var(--shadow);transition:border-color .15s,box-shadow .15s}
 .card:hover{border-top-color:var(--navy);box-shadow:0 3px 10px rgba(27,42,74,.1)}
@@ -286,6 +288,82 @@ function reset(){
   ['f-cat','f-st','f-yr'].forEach(id=>document.getElementById(id).value='');
   render();
 }
+
+
+function exportWord(){
+  const data = isActive() ? fd() : [...DATA].sort((a,b)=>parseDate(b.data)-parseDate(a.data)).slice(0,12);
+  if(!data.length){alert('Nu exista documente de exportat.');return;}
+
+  const label = isActive() ? 'Documente filtrate' : 'Ultimele 12 documente aprobate';
+  const today = new Date().toLocaleDateString('ro-RO');
+
+  let rows = data.map((r,i)=>
+    '<w:tr>'+
+    '<w:tc><w:tcPr><w:tcW w:w=400 w:type=dxa/></w:tcPr><w:p><w:r><w:rPr><w:sz w:val=18/></w:rPr><w:t>'+(i+1)+'</w:t></w:r></w:p></w:tc>'+
+    '<w:tc><w:tcPr><w:tcW w:w=1200 w:type=dxa/></w:tcPr><w:p><w:r><w:rPr><w:sz w:val=18/><w:b/></w:rPr><w:t xml:space=preserve>'+(r.cod||'—')+'</w:t></w:r></w:p></w:tc>'+
+    '<w:tc><w:tcPr><w:tcW w:w=4000 w:type=dxa/></w:tcPr><w:p><w:r><w:rPr><w:sz w:val=18/></w:rPr><w:t xml:space=preserve>'+r.denumire.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</w:t></w:r></w:p></w:tc>'+
+    '<w:tc><w:tcPr><w:tcW w:w=1200 w:type=dxa/></w:tcPr><w:p><w:r><w:rPr><w:sz w:val=18/></w:rPr><w:t xml:space=preserve>'+(r.categorie||'')+'</w:t></w:r></w:p></w:tc>'+
+    '<w:tc><w:tcPr><w:tcW w:w=900 w:type=dxa/></w:tcPr><w:p><w:r><w:rPr><w:sz w:val=18/></w:rPr><w:t xml:space=preserve>'+(r.data||'')+'</w:t></w:r></w:p></w:tc>'+
+    '<w:tc><w:tcPr><w:tcW w:w=1000 w:type=dxa/></w:tcPr><w:p><w:r><w:rPr><w:sz w:val=18/></w:rPr><w:t xml:space=preserve>'+(r.stare||'')+'</w:t></w:r></w:p></w:tc>'+
+    '</w:tr>'
+  ).join('');
+
+  const header =
+    '<w:tr>'+
+    '<w:tc><w:tcPr><w:tcW w:w=400 w:type=dxa/><w:shd w:val=clear w:color=auto w:fill=002147/></w:tcPr><w:p><w:r><w:rPr><w:sz w:val=18/><w:b/><w:color w:val=FFFFFF/></w:rPr><w:t>Nr.</w:t></w:r></w:p></w:tc>'+
+    '<w:tc><w:tcPr><w:tcW w:w=1200 w:type=dxa/><w:shd w:val=clear w:color=auto w:fill=002147/></w:tcPr><w:p><w:r><w:rPr><w:sz w:val=18/><w:b/><w:color w:val=FFFFFF/></w:rPr><w:t>Cod</w:t></w:r></w:p></w:tc>'+
+    '<w:tc><w:tcPr><w:tcW w:w=4000 w:type=dxa/><w:shd w:val=clear w:color=auto w:fill=002147/></w:tcPr><w:p><w:r><w:rPr><w:sz w:val=18/><w:b/><w:color w:val=FFFFFF/></w:rPr><w:t>Denumire</w:t></w:r></w:p></w:tc>'+
+    '<w:tc><w:tcPr><w:tcW w:w=1200 w:type=dxa/><w:shd w:val=clear w:color=auto w:fill=002147/></w:tcPr><w:p><w:r><w:rPr><w:sz w:val=18/><w:b/><w:color w:val=FFFFFF/></w:rPr><w:t>Categorie</w:t></w:r></w:p></w:tc>'+
+    '<w:tc><w:tcPr><w:tcW w:w=900 w:type=dxa/><w:shd w:val=clear w:color=auto w:fill=002147/></w:tcPr><w:p><w:r><w:rPr><w:sz w:val=18/><w:b/><w:color w:val=FFFFFF/></w:rPr><w:t>Data aprobarii</w:t></w:r></w:p></w:tc>'+
+    '<w:tc><w:tcPr><w:tcW w:w=1000 w:type=dxa/><w:shd w:val=clear w:color=auto w:fill=002147/></w:tcPr><w:p><w:r><w:rPr><w:sz w:val=18/><w:b/><w:color w:val=FFFFFF/></w:rPr><w:t>Stare</w:t></w:r></w:p></w:tc>'+
+    '</w:tr>';
+
+  const xml = '<?xml version=1.0 encoding=UTF-8 standalone=yes?>'+
+  '<w:wordDocument xmlns:w=http://schemas.microsoft.com/office/word/2003/wordml>'+
+  '<w:body>'+
+  '<w:p><w:pPr><w:jc w:val=center/></w:pPr>'+
+  '<w:r><w:rPr><w:b/><w:sz w:val=28/><w:color w:val=002147/></w:rPr>'+
+  '<w:t>Academia de Muzica, Teatru si Arte Plastice</w:t></w:r></w:p>'+
+  '<w:p><w:pPr><w:jc w:val=center/></w:pPr>'+
+  '<w:r><w:rPr><w:sz w:val=22/><w:color w:val=002147/></w:rPr>'+
+  '<w:t>Registrul actelor normative interne</w:t></w:r></w:p>'+
+  '<w:p><w:pPr><w:jc w:val=center/></w:pPr>'+
+  '<w:r><w:rPr><w:sz w:val=18/><w:color w:val=666666/></w:rPr>'+
+  '<w:t>'+label+' — generat la '+today+'</w:t></w:r></w:p>'+
+  '<w:p><w:r><w:t> </w:t></w:r></w:p>'+
+  '<w:tbl>'+
+  '<w:tblPr><w:tblW w:w=8700 w:type=dxa/><w:tblBorders>'+
+  '<w:top w:val=single w:sz=4 w:space=0 w:color=002147/>'+
+  '<w:left w:val=single w:sz=4 w:space=0 w:color=002147/>'+
+  '<w:bottom w:val=single w:sz=4 w:space=0 w:color=002147/>'+
+  '<w:right w:val=single w:sz=4 w:space=0 w:color=002147/>'+
+  '<w:insideH w:val=single w:sz=4 w:space=0 w:color=DDDDDD/>'+
+  '<w:insideV w:val=single w:sz=4 w:space=0 w:color=DDDDDD/>'+
+  '</w:tblBorders></w:tblPr>'+
+  header + rows +
+  '</w:tbl>'+
+  '<w:p><w:r><w:t> </w:t></w:r></w:p>'+
+  '<w:p><w:pPr><w:jc w:val=right/></w:pPr>'+
+  '<w:r><w:rPr><w:sz w:val=16/><w:color w:val=999999/></w:rPr>'+
+  '<w:t>Total: '+data.length+' documente</w:t></w:r></w:p>'+
+  '</w:body></w:wordDocument>';
+
+  const blob = new Blob([xml], {type:'application/msword'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'Registru_AMTAP_'+today.replace(/\./g,'-')+'.doc';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// Afiseaza/ascunde butonul de export dupa render
+const _render = render;
+render = function(){
+  _render();
+  const btn = document.getElementById('btn-export');
+  if(btn) btn.style.display = 'flex';
+};
 
 document.getElementById('srch').addEventListener('input',render);
 ['f-cat','f-st','f-yr'].forEach(id=>document.getElementById(id).addEventListener('change',render));
