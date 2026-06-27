@@ -357,13 +357,7 @@ function exportWord(){
   URL.revokeObjectURL(url);
 }
 
-// Afiseaza/ascunde butonul de export dupa render
-const _render = render;
-render = function(){
-  _render();
-  const btn = document.getElementById('btn-export');
-  if(btn) btn.style.display = 'flex';
-};
+
 
 document.getElementById('srch').addEventListener('input',render);
 ['f-cat','f-st','f-yr'].forEach(id=>document.getElementById(id).addEventListener('change',render));
