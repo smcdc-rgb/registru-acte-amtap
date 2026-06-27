@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Registrul documentelor procedurale AMTAP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --blue: #1A56DB; --blue-light: #EBF2FF;
+  --green: #0A6640; --green-light: #D1FAE5;
+  --red: #9B1C1C; --red-light: #FEE2E2;
+  --amber: #92400E; --amber-light: #FEF3C7;
+  --gray: #374151; --gray-light: #F3F4F6;
+  --gray-mid: #E5E7EB; --gray-soft: #6B7280;
+  --bg: #F9FAFB; --card-bg: #FFFFFF;
+  --text: #111827; --border: #E5E7EB;
+  --radius: 10px; --radius-sm: 6px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+a{text-decoration:none;color:inherit}
+
+.site-header{background:#fff;border-bottom:1px solid var(--border);padding:0 1.5rem;position:sticky;top:0;z-index:100;box-shadow:0 1px 4px rgba(0,0,0,0.06)}
+.header-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;gap:1rem;height:60px}
+.logo{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.logo-icon{width:36px;height:36px;background:var(--blue);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px}
+.logo-text strong{font-size:14px;font-weight:600;color:var(--text);display:block;line-height:1.2}
+.logo-text span{font-size:11px;color:var(--gray-soft)}
+.header-search{flex:1;max-width:480px;display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 12px;margin-left:auto}
+.header-search input{border:none;outline:none;background:transparent;font-size:14px;color:var(--text);flex:1;font-family:inherit}
+.header-search input::placeholder{color:#9CA3AF}
+
+.main{max-width:1200px;margin:0 auto;padding:1.5rem}
+
+/* LOADING */
+.loading{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4rem;gap:16px;color:var(--gray-soft)}
+.spinner{width:36px;height:36px;border:3px solid var(--gray-mid);border-top-color:var(--blue);border-radius:50%;animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading p{font-size:14px}
+
+/* ERROR */
+.error-box{background:#FEF2F2;border:1px solid #FECACA;border-radius:var(--radius);padding:1rem 1.25rem;color:#7F1D1D;font-size:14px;margin-bottom:1rem;display:none}
+
+.stats-bar{display:flex;gap:10px;margin-bottom:1.25rem;flex-wrap:wrap}
+.stat-pill{display:flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--border);border-radius:20px;padding:6px 14px;font-size:13px;color:var(--gray-soft)}
+.stat-pill strong{font-weight:600;color:var(--text)}
+.stat-pill.vig strong{color:var(--green)}
+.stat-pill.exp strong{color:var(--red)}
+.stat-pill.rev strong{color:var(--blue)}
+.dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+
+.filters-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1.25rem;align-items:center}
+.filter-group{display:flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 10px}
+.filter-group label{font-size:12px;color:var(--gray-soft);white-space:nowrap}
+.filter-group select{border:none;outline:none;background:transparent;font-size:13px;color:var(--text);cursor:pointer;font-family:inherit}
+.btn-reset{display:flex;align-items:center;gap:5px;background:none;border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 12px;font-size:13px;color:var(--gray-soft);cursor:pointer;font-family:inherit}
+.btn-reset:hover{background:var(--gray-light)}
+.sync-info{font-size:12px;color:var(--gray-soft);margin-left:auto;display:flex;align-items:center;gap:5px}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:#10B981;flex-shrink:0}
+
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
+.card{background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.125rem;display:flex;flex-direction:column;gap:8px;box-shadow:var(--shadow);transition:border-color 0.15s,box-shadow 0.15s}
+.card:hover{border-color:#93C5FD;box-shadow:0 2px 8px rgba(26,86,219,0.08)}
+.card-head{display:flex;align-items:flex-start;gap:8px}
+.card-cod{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:500;color:#fff;background:var(--gray);border-radius:4px;padding:2px 6px;flex-shrink:0;margin-top:1px}
+.card-title{font-size:13.5px;font-weight:500;color:var(--text);line-height:1.45;flex:1}
+.cat-badge{font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0;margin-top:1px}
+.cat-reg{background:var(--blue-light);color:#1E40AF}
+.cat-proc{background:var(--green-light);color:var(--green)}
+.cat-met{background:#EDE9FE;color:#5B21B6}
+.cat-strat{background:var(--amber-light);color:var(--amber)}
+.cat-cod{background:var(--red-light);color:var(--red)}
+.cat-alte{background:#F3F4F6;color:#374151}
+.card-meta{display:flex;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--gray-soft);align-items:center}
+.editie-tag{font-family:'JetBrains Mono',monospace;font-size:10px;color:#9CA3AF;background:#F9FAFB;border:1px solid var(--border);border-radius:4px;padding:1px 5px}
+.card-footer{display:flex;align-items:center;justify-content:space-between;padding-top:8px;border-top:1px solid #F3F4F6;gap:8px}
+.stare-tag{font-size:11px;font-weight:500;padding:2px 8px;border-radius:20px;flex-shrink:0}
+.s-vig{background:var(--green-light);color:var(--green)}
+.s-exp{background:var(--red-light);color:var(--red)}
+.s-rev{background:var(--blue-light);color:#1E40AF}
+.s-arh{background:#F3F4F6;color:#6B7280}
+.s-alt{background:#F9FAFB;color:#9CA3AF}
+.exp-date{font-size:11px;color:#9CA3AF}
+.card-link{font-size:12px;color:var(--blue);display:flex;align-items:center;gap:3px;white-space:nowrap;margin-left:auto;font-weight:500}
+.card-link:hover{text-decoration:underline}
+.card-link.no-link{color:#D1D5DB;cursor:default;font-weight:400}
+.card-link.no-link:hover{text-decoration:none}
+.empty-state{display:none;text-align:center;padding:4rem 2rem;color:var(--gray-soft)}
+.empty-state p{font-size:15px;margin-top:12px}
+
+.site-footer{max-width:1200px;margin:2rem auto 0;padding:1rem 1.5rem;border-top:1px solid var(--border);font-size:12px;color:#9CA3AF;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+
+@media(max-width:640px){
+  .logo-text{display:none}
+  .header-search{max-width:100%}
+  .main{padding:1rem}
+  .cards-grid{grid-template-columns:1fr}
+  .sync-info{display:none}
+}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <div class="logo">
+      <div class="logo-icon">📋</div>
+      <div class="logo-text">
+        <strong>Registrul AMTAP</strong>
+        <span>Documente procedurale</span>
+      </div>
+    </div>
+    <div class="header-search">
+      <span style="color:#9CA3AF;font-size:16px">🔍</span>
+      <input type="text" id="srch" placeholder="Caută după cod, denumire sau persoană..." autocomplete="off">
+    </div>
+  </div>
+</header>
+
+<main class="main">
+  <div class="error-box" id="error-box">
+    ⚠️ Nu s-au putut încărca datele din Google Sheets. Verifică conexiunea la internet și reîncarcă pagina.
+  </div>
+
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <p>Se încarcă datele din Google Sheets...</p>
+  </div>
+
+  <div id="app-content" style="display:none">
+    <div class="stats-bar" id="stats-bar"></div>
+    <div class="filters-row">
+      <div class="filter-group">
+        <label>📂 Categorie</label>
+        <select id="f-cat"><option value="">Toate</option></select>
+      </div>
+      <div class="filter-group">
+        <label>🚦 Stare</label>
+        <select id="f-stare">
+          <option value="">Toate</option>
+          <option>În vigoare</option>
+          <option>Expirat</option>
+          <option>Revizuit</option>
+          <option>Arhivat</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>🏛️ Structura</label>
+        <select id="f-struct"><option value="">Toate</option></select>
+      </div>
+      <div class="filter-group">
+        <label>🔗 Document</label>
+        <select id="f-link">
+          <option value="">Toate</option>
+          <option value="cu">Cu link</option>
+          <option value="fara">Fără link</option>
+        </select>
+      </div>
+      <button class="btn-reset" onclick="resetAll()">↺ Resetează</button>
+      <div class="sync-info"><span class="sync-dot"></span><span id="sync-time"></span></div>
+    </div>
+    <div class="cards-grid" id="grid"></div>
+    <div class="empty-state" id="empty">
+      <span style="font-size:48px">🔍</span>
+      <p>Nicio înregistrare nu corespunde filtrelor selectate.</p>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <span>Academia de Muzică, Teatru și Arte Plastice — SMCDC</span>
+  <span id="footer-count"></span>
+</footer>
+
+<script>
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRvH0CfmR7M2JvPDQ6h1xugYL8DJaveMV2gcbjZ_xqrOHn8n4OHsOuYv9AI-OjqUQ/pub?gid=2117880652&single=true&output=csv';
+
+const CAT_CLASS={Regulament:'cat-reg',Procedură:'cat-proc',Metodologie:'cat-met',Strategie:'cat-strat',Cod:'cat-cod'};
+const STARE_CLASS={'În vigoare':'s-vig',Expirat:'s-exp',Revizuit:'s-rev',Arhivat:'s-arh'};
+
+let ALL_DATA = [];
+
+// Parse CSV simplu (gestionează ghilimele)
+function parseCSV(text) {
+  const lines = text.split(/\r?\n/);
+  return lines.map(line => {
+    const cols = [];
+    let cur = '', inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (c === '"') { inQ = !inQ; }
+      else if (c === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
+      else { cur += c; }
+    }
+    cols.push(cur.trim());
+    return cols;
+  });
+}
+
+function normalizeStare(s) {
+  const sl = (s||'').toLowerCase();
+  if (sl.includes('vigoare')) return 'În vigoare';
+  if (sl.includes('expir')) return 'Expirat';
+  if (sl.includes('arhiv')) return 'Arhivat';
+  if (sl.includes('revizuit')||sl.includes('actualizat')) return 'Revizuit';
+  return s || 'Necunoscut';
+}
+
+async function loadData() {
+  try {
+    const resp = await fetch(CSV_URL);
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const text = await resp.text();
+    const rows = parseCSV(text);
+
+    // Sărim primele 3 rânduri antet
+    const data = [];
+    for (let i = 3; i < rows.length; i++) {
+      const r = rows[i];
+      if (!r || r.length < 14) continue;
+      const denumire = (r[1]||'').replace(/\n/g,'').trim();
+      const categorie = (r[2]||'').replace(/\n/g,'').trim();
+      if (!denumire || !categorie) continue;
+      const link = (r[14]||'').trim();
+      data.push({
+        cod: (r[0]||'').trim(),
+        denumire: denumire.substring(0,130),
+        categorie,
+        editie: (r[3]||'').trim(),
+        persoana: (r[5]||'').trim().substring(0,50),
+        data: (r[7]||'').trim().substring(0,10),
+        structura: (r[9]||'').trim(),
+        expirare: (r[12]||'').trim().substring(0,10),
+        stare: normalizeStare(r[13]),
+        link: link.startsWith('http') ? link : ''
+      });
+    }
+
+    ALL_DATA = data;
+
+    // Populează filtrele dinamic
+    const cats = [...new Set(data.map(r=>r.categorie).filter(Boolean))].sort();
+    const structs = [...new Set(data.map(r=>r.structura).filter(Boolean))].sort();
+    const fCat = document.getElementById('f-cat');
+    cats.forEach(c => { const o=document.createElement('option'); o.value=o.textContent=c; fCat.appendChild(o); });
+    const fStr = document.getElementById('f-struct');
+    structs.forEach(s => { const o=document.createElement('option'); o.value=o.textContent=s; fStr.appendChild(o); });
+
+    // Timp sincronizare
+    const now = new Date();
+    document.getElementById('sync-time').textContent = `Sincronizat ${now.toLocaleTimeString('ro-RO', {hour:'2-digit',minute:'2-digit'})}`;
+
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('app-content').style.display = 'block';
+    render();
+
+  } catch(e) {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('error-box').style.display = 'block';
+    console.error(e);
+  }
+}
+
+function filterData() {
+  const q = document.getElementById('srch').value.toLowerCase();
+  const fc = document.getElementById('f-cat').value;
+  const fs = document.getElementById('f-stare').value;
+  const fst = document.getElementById('f-struct').value;
+  const fl = document.getElementById('f-link').value;
+  return ALL_DATA.filter(r => {
+    const mq = !q || (r.denumire+' '+r.cod+' '+r.persoana+' '+r.categorie).toLowerCase().includes(q);
+    return mq && (!fc||r.categorie===fc) && (!fs||r.stare===fs) && (!fst||r.structura===fst) && (!fl||(fl==='cu'?!!r.link:!r.link));
+  });
+}
+
+function render() {
+  const data = filterData();
+  const vig = data.filter(r=>r.stare==='În vigoare').length;
+  const exp = data.filter(r=>r.stare==='Expirat').length;
+  const rev = data.filter(r=>r.stare==='Revizuit').length;
+
+  document.getElementById('stats-bar').innerHTML = `
+    <div class="stat-pill"><span class="dot" style="background:#374151"></span><strong>${data.length}</strong> total</div>
+    <div class="stat-pill vig"><span class="dot" style="background:#0A6640"></span><strong>${vig}</strong> în vigoare</div>
+    <div class="stat-pill exp"><span class="dot" style="background:#9B1C1C"></span><strong>${exp}</strong> expirate</div>
+    <div class="stat-pill rev"><span class="dot" style="background:#1A56DB"></span><strong>${rev}</strong> revizuite</div>`;
+
+  document.getElementById('footer-count').textContent = `${ALL_DATA.length} documente în total`;
+
+  const grid = document.getElementById('grid');
+  const empty = document.getElementById('empty');
+  if (!data.length) { grid.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display = 'none';
+
+  grid.innerHTML = data.map(r => {
+    const cc = CAT_CLASS[r.categorie]||'cat-alte';
+    const sc = STARE_CLASS[r.stare]||'s-alt';
+    const showExp = r.expirare && !r.expirare.includes('1904');
+    return `<div class="card">
+      <div class="card-head">
+        ${r.cod ? `<span class="card-cod">${r.cod}</span>` : ''}
+        <div class="card-title">${r.denumire}</div>
+        <span class="cat-badge ${cc}">${r.categorie}</span>
+      </div>
+      <div class="card-meta">
+        ${r.persoana ? `<span>👤 ${r.persoana}</span>` : ''}
+        ${r.data ? `<span>📅 ${r.data}</span>` : ''}
+        ${r.structura ? `<span>🏛️ ${r.structura}</span>` : ''}
+        ${r.editie ? `<span class="editie-tag">ed.${r.editie}</span>` : ''}
+      </div>
+      <div class="card-footer">
+        <span class="stare-tag ${sc}">${r.stare}</span>
+        ${showExp ? `<span class="exp-date">⏳ ${r.expirare}</span>` : ''}
+        ${r.link
+          ? `<a class="card-link" href="${r.link}" target="_blank" rel="noopener">🔗 Deschide</a>`
+          : `<span class="card-link no-link">Fără link</span>`}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function resetAll() {
+  document.getElementById('srch').value = '';
+  ['f-cat','f-stare','f-struct','f-link'].forEach(id => document.getElementById(id).value = '');
+  render();
+}
+
+document.getElementById('srch').addEventListener('input', render);
+['f-cat','f-stare','f-struct','f-link'].forEach(id =>
+  document.getElementById(id).addEventListener('change', render));
+
+// Încarcă datele la pornire
+loadData();
+</script>
+</body>
+</html>
