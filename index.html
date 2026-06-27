@@ -126,7 +126,7 @@ a{text-decoration:none;color:inherit}
     </div>
     <div id="welcome" style="display:none"></div>
     <div class="cards-grid" id="grid"></div>
-    <div class="empty-state" id="empty"><span style="font-size:42px">&#128269;</span><p>Nicio înregistrare nu corespunde filtrelor selectate.</p></div>
+    <div class="empty-state" id="empty"><span style="font-size:42px;color:#9CA3AF"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span><p>Nicio înregistrare nu corespunde filtrelor selectate.</p></div>
   </div>
 </main>
 <footer class="site-footer"><div class="footer-inner"><span>&copy; <span id="yr"></span> Academia de Muzică, Teatru şi Arte Plastice &mdash; Republica Moldova</span><span id="fc"></span></div></footer>
@@ -179,7 +179,8 @@ async function load(){
       const lk=(r[14]||'').trim();
       d.push({cod:(r[0]||'').trim(),denumire:den.slice(0,130),categorie:cat,
         editie:(r[3]||'').trim(),persoana:(r[5]||'').trim().slice(0,50),
-        data:(r[7]||'').trim().slice(0,10),structura:(r[9]||'').trim(),
+        data:(r[7]||'').trim().slice(0,10),pv:(r[8]||'').trim(),
+        structura:(r[9]||'').trim(),
         expirare:(r[12]||'').trim().slice(0,10),stare:norm(r[13]),
         link:lk.startsWith('http')?lk:''});
     }
@@ -294,8 +295,19 @@ function reset(){
 function exportWord(){
   const data = isActive() ? fd() : [...DATA].sort((a,b)=>parseDate(b.data)-parseDate(a.data)).slice(0,12);
   if(!data.length){alert('Nu exista documente de exportat.');return;}
-  const label = isActive() ? 'Documente filtrate' : 'Ultimele 12 documente aprobate';
   const today = new Date().toLocaleDateString('ro-RO');
+
+  // Construiesc descrierea filtrelor pentru subtitlu
+  const parts = [];
+  const qv = document.getElementById('srch').value.trim();
+  const cv = document.getElementById('f-cat').value;
+  const sv = document.getElementById('f-st').value;
+  const yv = document.getElementById('f-yr').value;
+  if(qv) parts.push('Căutare: "'+qv+'"');
+  if(cv) parts.push('Categorie: '+cv);
+  if(sv) parts.push('Stare: '+sv);
+  if(yv) parts.push('Anul aprobării: '+yv);
+  const filterDesc = parts.length ? parts.join(' &nbsp;|&nbsp; ') : 'Ultimele 12 documente aprobate';
 
   const win = window.open('','_blank');
   win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
@@ -304,33 +316,49 @@ function exportWord(){
     body{font-family:Arial,sans-serif;margin:30px;color:#111}
     h2{color:#002147;text-align:center;margin-bottom:4px;font-size:16px}
     h3{color:#002147;text-align:center;font-size:13px;font-weight:normal;margin-bottom:4px}
-    .sub{text-align:center;font-size:11px;color:#666;margin-bottom:20px}
+    .sub{text-align:center;font-size:11px;color:#555;margin-bottom:6px;padding:6px 12px;background:#f5f8fc;border-radius:4px;display:inline-block}
+    .sub-wrap{text-align:center;margin-bottom:16px}
     table{width:100%;border-collapse:collapse;font-size:11px}
     th{background:#002147;color:#fff;padding:7px 6px;text-align:left;font-size:11px}
     td{padding:6px;border-bottom:1px solid #ddd;vertical-align:top}
     tr:nth-child(even) td{background:#f5f8fc}
     .cod{font-weight:bold;white-space:nowrap;color:#002147}
+    .pv{white-space:nowrap;color:#555;font-size:10px}
     .badge{display:inline-block;padding:2px 6px;border-radius:3px;font-size:10px;font-weight:bold}
     .vig{background:#D1FAE5;color:#0A6640}
     .exp{background:#FEE2E2;color:#9B1C1C}
     .rev{background:#EBF2FF;color:#002147}
     .arh{background:#F3F4F6;color:#374151}
-    .footer{margin-top:20px;font-size:10px;color:#999;text-align:right}
+    .footer{margin-top:16px;font-size:10px;color:#999;text-align:right;border-top:1px solid #eee;padding-top:8px}
     @media print{body{margin:15px}}
   </style></head><body>
-  <h2>Academia de Muzică, Teatru şi Arte Plastice</h2>
-  <h3>Registrul actelor normative interne</h3>
-  <div class="sub">${label} &mdash; generat la ${today}</div>
+  <h2>Academia de Muzică, Teatru și Arte Plastice</h2>
+  <h3>Registrul actelor normative interne — SMCDC</h3>
+  <div class="sub-wrap"><span class="sub">Filtre aplicate: ${filterDesc} &nbsp;&mdash;&nbsp; Generat la ${today}</span></div>
   <table>
-    <thead><tr><th style="width:30px">Nr.</th><th style="width:70px">Cod</th><th>Denumire</th><th style="width:90px">Categorie</th><th style="width:80px">Data aprob.</th><th style="width:80px">Stare</th></tr></thead>
+    <thead><tr>
+      <th style="width:25px">Nr.</th>
+      <th style="width:65px">Cod</th>
+      <th>Denumire</th>
+      <th style="width:85px">Categorie</th>
+      <th style="width:90px">Nr. PV / Data aprob.</th>
+      <th style="width:75px">Stare</th>
+    </tr></thead>
     <tbody>
     ${data.map((r,i)=>{
       const sc=r.stare==='In vigoare'?'vig':r.stare==='Expirat'?'exp':r.stare==='Revizuit'?'rev':'arh';
-      return `<tr><td>${i+1}</td><td class="cod">${r.cod||'&mdash;'}</td><td>${r.denumire}</td><td>${r.categorie}</td><td>${r.data||''}</td><td><span class="badge ${sc}">${r.stare}</span></td></tr>`;
+      return `<tr>
+        <td>${i+1}</td>
+        <td class="cod">${r.cod||'&mdash;'}</td>
+        <td>${r.denumire}</td>
+        <td>${r.categorie}</td>
+        <td class="pv">${r.pv||''}<br><span style="color:#888">${r.data||''}</span></td>
+        <td><span class="badge ${sc}">${r.stare}</span></td>
+      </tr>`;
     }).join('')}
     </tbody>
   </table>
-  <div class="footer">Total: ${data.length} documente &nbsp;|&nbsp; SMCDC &mdash; AMTAP</div>
+  <div class="footer">Total: ${data.length} documente &nbsp;|&nbsp; Secția Managementul Calității și Dezvoltare Curriculară &mdash; AMTAP</div>
   <script>window.onload=function(){window.print();}<\/script>
   </body></html>`);
   win.document.close();
