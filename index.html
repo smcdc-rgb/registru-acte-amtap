@@ -85,6 +85,22 @@ a{text-decoration:none;color:inherit}
 .welcome-box h3{font-size:15px;font-weight:600;color:var(--navy);margin-bottom:6px}
 .welcome-box p{font-size:13px;line-height:1.6}
 .empty-state{display:none;text-align:center;padding:4rem 2rem;color:var(--gray-soft)}
+.view-toggle{display:flex;align-items:center;gap:4px;margin-left:auto;background:#fff;border:1px solid var(--border);border-radius:var(--radius-sm);padding:3px}
+.view-btn{background:none;border:none;border-radius:4px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--gray-soft);display:flex;align-items:center;gap:5px;transition:all .15s;font-family:inherit}
+.view-btn.active{background:var(--navy);color:#fff}
+.view-btn:not(.active):hover{background:var(--gray-light)}
+.tbl-wrap{width:100%;overflow-x:auto}
+.tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+.tbl thead th{background:var(--navy);color:#fff;padding:9px 10px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+.tbl tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
+.tbl tbody tr:hover{background:#F0F4FA}
+.tbl tbody td{padding:8px 10px;vertical-align:middle}
+.tbl .t-cod{font-family:"JetBrains Mono",monospace;font-size:10px;font-weight:600;color:#fff;background:var(--navy);border-radius:3px;padding:2px 6px;white-space:nowrap}
+.tbl .t-den{font-size:12.5px;color:var(--text);line-height:1.4;max-width:380px}
+.tbl .t-actions{display:flex;align-items:center;gap:6px;white-space:nowrap}
+.tbl .t-link{font-size:11px;color:var(--navy);font-weight:600;display:flex;align-items:center;gap:3px}
+.tbl .t-link:hover{color:var(--gold)}
+.tbl .t-link.disabled{color:#D1D5DB;cursor:default;pointer-events:none}
 .alert-box{background:#FEF3C7;border:1px solid #F59E0B;border-left:4px solid #F59E0B;border-radius:var(--radius);padding:12px 16px;margin-bottom:1.25rem;display:none}
 .alert-box-header{display:flex;align-items:center;justify-content:space-between;cursor:pointer;gap:8px}
 .alert-box-title{font-size:13px;font-weight:600;color:#92400E;display:flex;align-items:center;gap:7px}
@@ -148,10 +164,22 @@ a{text-decoration:none;color:inherit}
       <div class="filter-group"><label>Stare</label><select id="f-st"><option value="">Toate stările</option><option>In vigoare</option><option>Expirat</option><option>Revizuit</option><option>Arhivat</option></select></div>
       <div class="filter-group"><label>Anul aprobarii</label><select id="f-yr"><option value="">Toti anii</option></select></div>
       <button class="btn-reset" onclick="reset()">&#8634; Resetează</button>
+      
+      <div class="view-toggle">
+        <button class="view-btn active" id="btn-cards" onclick="setView('cards')" title="Vizualizare carduri">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+          Carduri
+        </button>
+        <button class="view-btn" id="btn-table" onclick="setView('table')" title="Vizualizare tabel">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          Tabel
+        </button>
+      </div>
       <button class="btn-export" onclick="exportWord()">&#8595; Descarcă PDF</button>
     </div>
     <div id="welcome" style="display:none"></div>
     <div class="cards-grid" id="grid"></div>
+    <div class="tbl-wrap" id="tbl-wrap" style="display:none"><table class="tbl" id="tbl"><thead><tr><th>#</th><th>Cod</th><th>Denumire</th><th>Categorie</th><th>Data aprobării</th><th>Stare</th><th>Acțiuni</th></tr></thead><tbody id="tbl-body"></tbody></table></div>
     <div class="empty-state" id="empty"><span style="font-size:42px;color:#9CA3AF"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span><p>Nicio înregistrare nu corespunde filtrelor selectate.</p></div>
   </div>
 </main>
@@ -293,6 +321,7 @@ function render(){
     sb.innerHTML='<div class="stat-pill"><strong>'+DATA.length+'</strong>&nbsp;documente total in registru</div>'
       +'<span class="results-label">Se afiseaza ultimele 12 aprobate</span>';
     grid.innerHTML=buildCards(last12);
+    buildTable(last12);
     return;
   }
 
@@ -309,6 +338,7 @@ function render(){
   if(!data.length){grid.innerHTML='';empty.style.display='block';return;}
   empty.style.display='none';
   grid.innerHTML=buildCards(data);
+  buildTable(data);
 }
 
 function copyLink(btn){
@@ -468,6 +498,49 @@ function exportWord(){
 }
 
 
+
+let currentView = 'cards';
+
+function setView(v){
+  currentView = v;
+  document.getElementById('btn-cards').classList.toggle('active', v==='cards');
+  document.getElementById('btn-table').classList.toggle('active', v==='table');
+  document.getElementById('grid').style.display = v==='cards' ? 'grid' : 'none';
+  document.getElementById('tbl-wrap').style.display = v==='table' ? 'block' : 'none';
+  render();
+}
+
+function buildTable(data){
+  const tbody = document.getElementById('tbl-body');
+  if(!tbody) return;
+  tbody.innerHTML = data.map((r,i)=>{
+    const sc = SC[r.stare]||'s-alt';
+    const ts = parseDate(r.expirare);
+    let expBadge = '';
+    if(ts){
+      const now = new Date(); now.setHours(0,0,0,0);
+      const days = Math.ceil((ts-now.getTime())/(1000*60*60*24));
+      if(days>0&&days<=90&&r.stare!=='Expirat'&&r.stare!=='Arhivat')
+        expBadge = ' <span class="badge-expira">&#9888; '+days+'z</span>';
+    }
+    return '<tr>'
+      +'<td style="color:#9CA3AF;font-size:11px">'+( i+1)+'</td>'
+      +'<td>'+(r.cod?'<span class="t-cod">'+r.cod+'</span>':'<span style="color:#ccc">—</span>')+'</td>'
+      +'<td class="t-den">'+r.denumire+'</td>'
+      +'<td><span class="cat-badge '+(CC[r.categorie]||'cat-alte')+'">'+r.categorie+'</span></td>'
+      +'<td style="white-space:nowrap;font-size:12px;color:#555">'+( r.data||'—')+'</td>'
+      +'<td><span class="stare-tag '+sc+'">'+r.stare+'</span>'+expBadge+'</td>'
+      +'<td class="t-actions">'
+      +(r.link
+        ?'<a class="t-link" href="'+r.link+'" target="_blank" rel="noopener">&#128279; Deschide</a>'
+         +'<button class="btn-copy" data-url="'+r.link+'" onclick="copyLink(this)" title="Copiaza link">'
+         +'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>'
+         +'</button>'
+        :'<span class="t-link disabled">Fără link</span>')
+      +'</td>'
+      +'</tr>';
+  }).join('');
+}
 
 document.getElementById('srch').addEventListener('input',render);
 ['f-cat','f-st','f-yr'].forEach(id=>document.getElementById(id).addEventListener('change',render));
