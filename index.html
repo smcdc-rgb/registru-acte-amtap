@@ -77,6 +77,9 @@ a{text-decoration:none;color:inherit}
 .card-link{font-size:11.5px;color:var(--navy);display:flex;align-items:center;gap:3px;white-space:nowrap;margin-left:auto;font-weight:600}
 .card-link:hover{color:var(--gold)}
 .card-link.no-link{color:#D1D5DB;cursor:default;font-weight:400}
+.btn-copy{background:none;border:1px solid var(--border);border-radius:var(--radius-sm);padding:3px 8px;font-size:11px;color:var(--gray-soft);cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:4px;transition:all .15s}
+.btn-copy:hover{background:var(--gray-light);color:var(--navy)}
+.btn-copy.copied{background:var(--green-light);color:var(--green);border-color:#86EFAC}
 .welcome-box{text-align:center;padding:3.5rem 2rem;color:var(--gray-soft);background:#fff;border:1px dashed var(--border);border-radius:var(--radius);margin-top:0.5rem}
 .welcome-box .wicon{font-size:48px;display:block;margin-bottom:12px;opacity:.5}
 .welcome-box h3{font-size:15px;font-weight:600;color:var(--navy);margin-bottom:6px}
@@ -308,6 +311,32 @@ function render(){
   grid.innerHTML=buildCards(data);
 }
 
+function copyLink(btn, url){
+  if(!url){alert('Acest document nu are link asociat.');return;}
+  navigator.clipboard.writeText(url).then(()=>{
+    btn.textContent = '✓ Copiat!';
+    btn.classList.add('copied');
+    setTimeout(()=>{
+      btn.innerHTML = '&#128203; Copiază link';
+      btn.classList.remove('copied');
+    }, 2000);
+  }).catch(()=>{
+    // Fallback pentru browsere mai vechi
+    const ta = document.createElement('textarea');
+    ta.value = url;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    btn.textContent = '✓ Copiat!';
+    btn.classList.add('copied');
+    setTimeout(()=>{
+      btn.innerHTML = '&#128203; Copiază link';
+      btn.classList.remove('copied');
+    }, 2000);
+  });
+}
+
 function buildCards(data){
   return data.map(r=>{
     const cc=CC[r.categorie]||'cat-alte';
@@ -334,7 +363,8 @@ function buildCards(data){
     })()+'</span>'
       +(se?'<span class="exp-date">&#9203; '+r.expirare+'</span>':'')
       +(r.link?'<a class="card-link" href="'+r.link+'" target="_blank" rel="noopener">&#128279; Deschide</a>'
-              :'<span class="card-link no-link">Fara link</span>')
+              +'<button class="btn-copy" onclick="copyLink(this,''+r.link+'')">&#128203; Copiază link</button>'
+              :'<span class="card-link no-link">Fără link</span>')
       +'</div></div>';
   }).join('');
 }
