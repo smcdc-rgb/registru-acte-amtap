@@ -97,7 +97,7 @@ a{text-decoration:none;color:inherit}
     <div class="logo-divider"></div>
     <div class="logo-text">
       <span class="inst">Registrul actelor normative interne ale Academiei de Muzică, Teatru şi Arte Plastice</span>
-      <span class="dept">Secția Managementul Calității şi Dezvoltare Curriculară</span>
+      <span class="dept">Secția Managementul Calității şi Dezvoltare Curriculară — SMCDC</span>
     </div>
     <div class="header-search">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -122,7 +122,7 @@ a{text-decoration:none;color:inherit}
       <div class="filter-group"><label>Stare</label><select id="f-st"><option value="">Toate stările</option><option>In vigoare</option><option>Expirat</option><option>Revizuit</option><option>Arhivat</option></select></div>
       <div class="filter-group"><label>Anul aprobarii</label><select id="f-yr"><option value="">Toti anii</option></select></div>
       <button class="btn-reset" onclick="reset()">&#8634; Resetează</button>
-      <button class="btn-export" onclick="exportWord()">&#8595; Descarcă Word</button>
+      <button class="btn-export" onclick="exportWord()">&#8595; Descarcă PDF</button>
     </div>
     <div id="welcome" style="display:none"></div>
     <div class="cards-grid" id="grid"></div>
@@ -294,68 +294,46 @@ function reset(){
 function exportWord(){
   const data = isActive() ? fd() : [...DATA].sort((a,b)=>parseDate(b.data)-parseDate(a.data)).slice(0,12);
   if(!data.length){alert('Nu exista documente de exportat.');return;}
-
   const label = isActive() ? 'Documente filtrate' : 'Ultimele 12 documente aprobate';
   const today = new Date().toLocaleDateString('ro-RO');
 
-  let rows = data.map((r,i)=>
-    '<w:tr>'+
-    '<w:tc><w:tcPr><w:tcW w:w=400 w:type=dxa/></w:tcPr><w:p><w:r><w:rPr><w:sz w:val=18/></w:rPr><w:t>'+(i+1)+'</w:t></w:r></w:p></w:tc>'+
-    '<w:tc><w:tcPr><w:tcW w:w=1200 w:type=dxa/></w:tcPr><w:p><w:r><w:rPr><w:sz w:val=18/><w:b/></w:rPr><w:t xml:space=preserve>'+(r.cod||'—')+'</w:t></w:r></w:p></w:tc>'+
-    '<w:tc><w:tcPr><w:tcW w:w=4000 w:type=dxa/></w:tcPr><w:p><w:r><w:rPr><w:sz w:val=18/></w:rPr><w:t xml:space=preserve>'+r.denumire.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</w:t></w:r></w:p></w:tc>'+
-    '<w:tc><w:tcPr><w:tcW w:w=1200 w:type=dxa/></w:tcPr><w:p><w:r><w:rPr><w:sz w:val=18/></w:rPr><w:t xml:space=preserve>'+(r.categorie||'')+'</w:t></w:r></w:p></w:tc>'+
-    '<w:tc><w:tcPr><w:tcW w:w=900 w:type=dxa/></w:tcPr><w:p><w:r><w:rPr><w:sz w:val=18/></w:rPr><w:t xml:space=preserve>'+(r.data||'')+'</w:t></w:r></w:p></w:tc>'+
-    '<w:tc><w:tcPr><w:tcW w:w=1000 w:type=dxa/></w:tcPr><w:p><w:r><w:rPr><w:sz w:val=18/></w:rPr><w:t xml:space=preserve>'+(r.stare||'')+'</w:t></w:r></w:p></w:tc>'+
-    '</w:tr>'
-  ).join('');
-
-  const header =
-    '<w:tr>'+
-    '<w:tc><w:tcPr><w:tcW w:w=400 w:type=dxa/><w:shd w:val=clear w:color=auto w:fill=002147/></w:tcPr><w:p><w:r><w:rPr><w:sz w:val=18/><w:b/><w:color w:val=FFFFFF/></w:rPr><w:t>Nr.</w:t></w:r></w:p></w:tc>'+
-    '<w:tc><w:tcPr><w:tcW w:w=1200 w:type=dxa/><w:shd w:val=clear w:color=auto w:fill=002147/></w:tcPr><w:p><w:r><w:rPr><w:sz w:val=18/><w:b/><w:color w:val=FFFFFF/></w:rPr><w:t>Cod</w:t></w:r></w:p></w:tc>'+
-    '<w:tc><w:tcPr><w:tcW w:w=4000 w:type=dxa/><w:shd w:val=clear w:color=auto w:fill=002147/></w:tcPr><w:p><w:r><w:rPr><w:sz w:val=18/><w:b/><w:color w:val=FFFFFF/></w:rPr><w:t>Denumire</w:t></w:r></w:p></w:tc>'+
-    '<w:tc><w:tcPr><w:tcW w:w=1200 w:type=dxa/><w:shd w:val=clear w:color=auto w:fill=002147/></w:tcPr><w:p><w:r><w:rPr><w:sz w:val=18/><w:b/><w:color w:val=FFFFFF/></w:rPr><w:t>Categorie</w:t></w:r></w:p></w:tc>'+
-    '<w:tc><w:tcPr><w:tcW w:w=900 w:type=dxa/><w:shd w:val=clear w:color=auto w:fill=002147/></w:tcPr><w:p><w:r><w:rPr><w:sz w:val=18/><w:b/><w:color w:val=FFFFFF/></w:rPr><w:t>Data aprobarii</w:t></w:r></w:p></w:tc>'+
-    '<w:tc><w:tcPr><w:tcW w:w=1000 w:type=dxa/><w:shd w:val=clear w:color=auto w:fill=002147/></w:tcPr><w:p><w:r><w:rPr><w:sz w:val=18/><w:b/><w:color w:val=FFFFFF/></w:rPr><w:t>Stare</w:t></w:r></w:p></w:tc>'+
-    '</w:tr>';
-
-  const xml = '<?xml version=1.0 encoding=UTF-8 standalone=yes?>'+
-  '<w:wordDocument xmlns:w=http://schemas.microsoft.com/office/word/2003/wordml>'+
-  '<w:body>'+
-  '<w:p><w:pPr><w:jc w:val=center/></w:pPr>'+
-  '<w:r><w:rPr><w:b/><w:sz w:val=28/><w:color w:val=002147/></w:rPr>'+
-  '<w:t>Academia de Muzica, Teatru si Arte Plastice</w:t></w:r></w:p>'+
-  '<w:p><w:pPr><w:jc w:val=center/></w:pPr>'+
-  '<w:r><w:rPr><w:sz w:val=22/><w:color w:val=002147/></w:rPr>'+
-  '<w:t>Registrul actelor normative interne</w:t></w:r></w:p>'+
-  '<w:p><w:pPr><w:jc w:val=center/></w:pPr>'+
-  '<w:r><w:rPr><w:sz w:val=18/><w:color w:val=666666/></w:rPr>'+
-  '<w:t>'+label+' — generat la '+today+'</w:t></w:r></w:p>'+
-  '<w:p><w:r><w:t> </w:t></w:r></w:p>'+
-  '<w:tbl>'+
-  '<w:tblPr><w:tblW w:w=8700 w:type=dxa/><w:tblBorders>'+
-  '<w:top w:val=single w:sz=4 w:space=0 w:color=002147/>'+
-  '<w:left w:val=single w:sz=4 w:space=0 w:color=002147/>'+
-  '<w:bottom w:val=single w:sz=4 w:space=0 w:color=002147/>'+
-  '<w:right w:val=single w:sz=4 w:space=0 w:color=002147/>'+
-  '<w:insideH w:val=single w:sz=4 w:space=0 w:color=DDDDDD/>'+
-  '<w:insideV w:val=single w:sz=4 w:space=0 w:color=DDDDDD/>'+
-  '</w:tblBorders></w:tblPr>'+
-  header + rows +
-  '</w:tbl>'+
-  '<w:p><w:r><w:t> </w:t></w:r></w:p>'+
-  '<w:p><w:pPr><w:jc w:val=right/></w:pPr>'+
-  '<w:r><w:rPr><w:sz w:val=16/><w:color w:val=999999/></w:rPr>'+
-  '<w:t>Total: '+data.length+' documente</w:t></w:r></w:p>'+
-  '</w:body></w:wordDocument>';
-
-  const blob = new Blob([xml], {type:'application/msword'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'Registru_AMTAP_'+today.replace(/\./g,'-')+'.doc';
-  a.click();
-  URL.revokeObjectURL(url);
+  const win = window.open('','_blank');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <title>Registru AMTAP</title>
+  <style>
+    body{font-family:Arial,sans-serif;margin:30px;color:#111}
+    h2{color:#002147;text-align:center;margin-bottom:4px;font-size:16px}
+    h3{color:#002147;text-align:center;font-size:13px;font-weight:normal;margin-bottom:4px}
+    .sub{text-align:center;font-size:11px;color:#666;margin-bottom:20px}
+    table{width:100%;border-collapse:collapse;font-size:11px}
+    th{background:#002147;color:#fff;padding:7px 6px;text-align:left;font-size:11px}
+    td{padding:6px;border-bottom:1px solid #ddd;vertical-align:top}
+    tr:nth-child(even) td{background:#f5f8fc}
+    .cod{font-weight:bold;white-space:nowrap;color:#002147}
+    .badge{display:inline-block;padding:2px 6px;border-radius:3px;font-size:10px;font-weight:bold}
+    .vig{background:#D1FAE5;color:#0A6640}
+    .exp{background:#FEE2E2;color:#9B1C1C}
+    .rev{background:#EBF2FF;color:#002147}
+    .arh{background:#F3F4F6;color:#374151}
+    .footer{margin-top:20px;font-size:10px;color:#999;text-align:right}
+    @media print{body{margin:15px}}
+  </style></head><body>
+  <h2>Academia de Muzică, Teatru şi Arte Plastice</h2>
+  <h3>Registrul actelor normative interne</h3>
+  <div class="sub">${label} &mdash; generat la ${today}</div>
+  <table>
+    <thead><tr><th style="width:30px">Nr.</th><th style="width:70px">Cod</th><th>Denumire</th><th style="width:90px">Categorie</th><th style="width:80px">Data aprob.</th><th style="width:80px">Stare</th></tr></thead>
+    <tbody>
+    ${data.map((r,i)=>{
+      const sc=r.stare==='In vigoare'?'vig':r.stare==='Expirat'?'exp':r.stare==='Revizuit'?'rev':'arh';
+      return `<tr><td>${i+1}</td><td class="cod">${r.cod||'&mdash;'}</td><td>${r.denumire}</td><td>${r.categorie}</td><td>${r.data||''}</td><td><span class="badge ${sc}">${r.stare}</span></td></tr>`;
+    }).join('')}
+    </tbody>
+  </table>
+  <div class="footer">Total: ${data.length} documente &nbsp;|&nbsp; SMCDC &mdash; AMTAP</div>
+  <script>window.onload=function(){window.print();}<\/script>
+  </body></html>`);
+  win.document.close();
 }
 
 
