@@ -311,30 +311,25 @@ function render(){
   grid.innerHTML=buildCards(data);
 }
 
-function copyLink(btn, url){
+function copyLink(btn){
+  const url = btn.getAttribute('data-url');
   if(!url){alert('Acest document nu are link asociat.');return;}
-  navigator.clipboard.writeText(url).then(()=>{
+  const doCopy = ()=>{
     btn.textContent = '✓ Copiat!';
     btn.classList.add('copied');
-    setTimeout(()=>{
-      btn.innerHTML = '&#128203; Copiază link';
-      btn.classList.remove('copied');
-    }, 2000);
-  }).catch(()=>{
-    // Fallback pentru browsere mai vechi
-    const ta = document.createElement('textarea');
-    ta.value = url;
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand('copy');
-    document.body.removeChild(ta);
-    btn.textContent = '✓ Copiat!';
-    btn.classList.add('copied');
-    setTimeout(()=>{
-      btn.innerHTML = '&#128203; Copiază link';
-      btn.classList.remove('copied');
-    }, 2000);
-  });
+    setTimeout(()=>{btn.innerHTML='&#128203; Copiaz&#259; link';btn.classList.remove('copied');},2000);
+  };
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(url).then(doCopy).catch(()=>{
+      const ta=document.createElement('textarea');ta.value=url;
+      document.body.appendChild(ta);ta.select();document.execCommand('copy');
+      document.body.removeChild(ta);doCopy();
+    });
+  } else {
+    const ta=document.createElement('textarea');ta.value=url;
+    document.body.appendChild(ta);ta.select();document.execCommand('copy');
+    document.body.removeChild(ta);doCopy();
+  }
 }
 
 function buildCards(data){
@@ -342,138 +337,36 @@ function buildCards(data){
     const cc=CC[r.categorie]||'cat-alte';
     const sc=SC[r.stare]||'s-alt';
     const se=r.expirare&&!r.expirare.includes('1904');
-    return '<div class="card"><div class="card-head">'
+    // Badge expira curand
+    let expBadge='';
+    const ts=parseDate(r.expirare);
+    if(ts){
+      const now=new Date();now.setHours(0,0,0,0);
+      const days=Math.ceil((ts-now.getTime())/(1000*60*60*24));
+      if(days>0&&days<=90&&r.stare!=='Expirat'&&r.stare!=='Arhivat')
+        expBadge='<span class="badge-expira">&#9888; '+days+'z</span>';
+    }
+    // Buton copiere link folosind data-attribute
+    const linkHtml = r.link
+      ? '<a class="card-link" href="'+r.link+'" target="_blank" rel="noopener">&#128279; Deschide</a>'
+        +'<button class="btn-copy" data-url="'+r.link+'" onclick="copyLink(this)">&#128203; Copiaz&#259; link</button>'
+      : '<span class="card-link no-link">F&#259;r&#259; link</span>';
+
+    return '<div class="card">'
+      +'<div class="card-head">'
       +(r.cod?'<span class="card-cod">'+r.cod+'</span>':'')
       +'<div class="card-title">'+r.denumire+'</div>'
-      +'<span class="cat-badge '+cc+'">'+r.categorie+'</span></div>'
+      +'<span class="cat-badge '+cc+'">'+r.categorie+'</span>'
+      +'</div>'
       +'<div class="card-meta">'
       +(r.persoana?'<span>&#128100; '+r.persoana+'</span>':'')
       +(r.data?'<span>&#128197; '+r.data+'</span>':'')
       +(r.structura?'<span>&#127963; '+r.structura+'</span>':'')
       +(r.editie?'<span class="editie-tag">ed.'+r.editie+'</span>':'')
-      +'</div><div class="card-footer">'
-      +'<span class="stare-tag '+sc+'">'+r.stare+(()=>{
-      const ts=parseDate(r.expirare);
-      if(!ts)return '';
-      const now=new Date();now.setHours(0,0,0,0);
-      const days=Math.ceil((ts-now.getTime())/(1000*60*60*24));
-      if(days>0&&days<=90&&r.stare!=='Expirat'&&r.stare!=='Arhivat')
-        return '<span class="badge-expira">⚠ '+days+'z</span>';
-      return '';
-    })()+'</span>'
+      +'</div>'
+      +'<div class="card-footer">'
+      +'<span class="stare-tag '+sc+'">'+r.stare+expBadge+'</span>'
       +(se?'<span class="exp-date">&#9203; '+r.expirare+'</span>':'')
-      +(r.link?'<a class="card-link" href="'+r.link+'" target="_blank" rel="noopener">&#128279; Deschide</a>'
-              +'<button class="btn-copy" onclick="copyLink(this,''+r.link+'')">&#128203; Copiază link</button>'
-              :'<span class="card-link no-link">Fără link</span>')
+      +linkHtml
       +'</div></div>';
-  }).join('');
-}
-
-function getYears(){
-  const yrs=new Set();
-  DATA.forEach(r=>{
-    const m=r.data.match(/\d{4}/);
-    if(m)yrs.add(m[0]);
-  });
-  return [...yrs].sort().reverse();
-}
-
-function buildYearFilter(){
-  const sel=document.getElementById('f-yr');
-  const yrs=getYears();
-  sel.innerHTML='<option value="">Toti anii</option>';
-  yrs.forEach(y=>{const o=document.createElement('option');o.value=o.textContent=y;sel.appendChild(o);});
-}
-
-function reset(){
-  document.getElementById('srch').value='';
-  ['f-cat','f-st','f-yr'].forEach(id=>document.getElementById(id).value='');
-  render();
-}
-
-
-function exportWord(){
-  const data = isActive() ? fd() : [...DATA].sort((a,b)=>parseDate(b.data)-parseDate(a.data)).slice(0,12);
-  if(!data.length){alert('Nu exista documente de exportat.');return;}
-  const today = new Date().toLocaleDateString('ro-RO');
-
-  // Construiesc descrierea filtrelor pentru subtitlu
-  const parts = [];
-  const qv = document.getElementById('srch').value.trim();
-  const cv = document.getElementById('f-cat').value;
-  const sv = document.getElementById('f-st').value;
-  const yv = document.getElementById('f-yr').value;
-  if(qv) parts.push('Căutare: "'+qv+'"');
-  if(cv) parts.push('Categorie: '+cv);
-  if(sv) parts.push('Stare: '+sv);
-  if(yv) parts.push('Anul aprobării: '+yv);
-  const filterDesc = parts.length ? parts.join(' &nbsp;|&nbsp; ') : 'Ultimele 12 documente aprobate';
-
-  const win = window.open('','_blank');
-  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
-  <title>Registru AMTAP</title>
-  <style>
-    body{font-family:Arial,sans-serif;margin:30px;color:#111}
-    h2{color:#002147;text-align:center;margin-bottom:4px;font-size:16px}
-    h3{color:#002147;text-align:center;font-size:13px;font-weight:normal;margin-bottom:4px}
-    .sub{text-align:center;font-size:11px;color:#555;margin-bottom:6px;padding:6px 12px;background:#f5f8fc;border-radius:4px;display:inline-block}
-    .sub-wrap{text-align:center;margin-bottom:16px}
-    table{width:100%;border-collapse:collapse;font-size:11px}
-    th{background:#002147;color:#fff;padding:7px 6px;text-align:left;font-size:11px}
-    td{padding:6px;border-bottom:1px solid #ddd;vertical-align:top}
-    tr:nth-child(even) td{background:#f5f8fc}
-    .cod{font-weight:bold;white-space:nowrap;color:#002147}
-    .pv{white-space:nowrap;color:#555;font-size:10px}
-    .badge{display:inline-block;padding:2px 6px;border-radius:3px;font-size:10px;font-weight:bold}
-    .vig{background:#D1FAE5;color:#0A6640}
-    .exp{background:#FEE2E2;color:#9B1C1C}
-    .rev{background:#EBF2FF;color:#002147}
-    .arh{background:#F3F4F6;color:#374151}
-    .footer{margin-top:16px;font-size:10px;color:#999;text-align:right;border-top:1px solid #eee;padding-top:8px}
-    @media print{body{margin:15px}}
-  </style></head><body>
-  <h2>Academia de Muzică, Teatru și Arte Plastice</h2>
-  <h3>Registrul actelor normative interne — SMCDC</h3>
-  <div class="sub-wrap"><span class="sub">Filtre aplicate: ${filterDesc} &nbsp;&mdash;&nbsp; Generat la ${today}</span></div>
-  <table>
-    <thead><tr>
-      <th style="width:25px">Nr.</th>
-      <th style="width:65px">Cod</th>
-      <th>Denumire</th>
-      <th style="width:85px">Categorie</th>
-      <th style="width:90px">Nr. PV / Data aprob.</th>
-      <th style="width:75px">Stare</th>
-    </tr></thead>
-    <tbody>
-    ${data.map((r,i)=>{
-      const sc=r.stare==='In vigoare'?'vig':r.stare==='Expirat'?'exp':r.stare==='Revizuit'?'rev':'arh';
-      return `<tr>
-        <td>${i+1}</td>
-        <td class="cod">${r.cod||'&mdash;'}</td>
-        <td>${r.denumire}</td>
-        <td>${r.categorie}</td>
-        <td class="pv">${r.pv||''}<br><span style="color:#888">${r.data||''}</span></td>
-        <td><span class="badge ${sc}">${r.stare}</span></td>
-      </tr>`;
-    }).join('')}
-    </tbody>
-  </table>
-  <div class="footer">Total: ${data.length} documente &nbsp;|&nbsp; Secția Managementul Calității și Dezvoltare Curriculară &mdash; AMTAP</div>
-  <script>window.onload=function(){window.print();}<\/script>
-  </body></html>`);
-  win.document.close();
-}
-
-
-
-document.getElementById('srch').addEventListener('input',render);
-['f-cat','f-st','f-yr'].forEach(id=>document.getElementById(id).addEventListener('change',render));
-
-// Wrap load pentru a construi filtrul de an dupa incarcarea datelor
-const origShow=show;
-window.show=function(d,msg){origShow(d,msg);buildYearFilter();};
-load();
-</script>
-<script>document.getElementById("yr").textContent=new Date().getFullYear();</script>
-</body>
-</html>
+  }).jo
