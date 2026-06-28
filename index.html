@@ -311,6 +311,13 @@ function pf(d){
 
 function show(d,msg){
   DATA=d;pf(d);checkExpiring(d);
+  // Populeaza filtrul de an
+  const sel=document.getElementById('f-yr');
+  if(sel){
+    const yrs=[...new Set(d.map(r=>{const m=(r.data||'').match(/[0-9]{4}/);return m?m[0]:null;}).filter(Boolean))].sort().reverse();
+    sel.innerHTML='<option value="">Toti anii</option>';
+    yrs.forEach(y=>{const o=document.createElement('option');o.value=o.textContent=y;sel.appendChild(o);});
+  }
   document.getElementById('sync-t').textContent=msg;
   document.getElementById('fc').textContent=d.length+' documente in registru';
   document.getElementById('loading').style.display='none';
@@ -622,8 +629,7 @@ function buildYearFilter(){
   sel.innerHTML='<option value="">Toti anii</option>';
   yrs.forEach(y=>{const o=document.createElement('option');o.value=o.textContent=y;sel.appendChild(o);});
 }
-const origShow=show;
-window.show=function(d,msg){origShow(d,msg);buildYearFilter();};
+
 load();
 </script>
 <script>document.getElementById("yr").textContent=new Date().getFullYear();</script>
