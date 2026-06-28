@@ -421,11 +421,10 @@ function copyLink(btn){
 }
 
 function buildCards(data){
-  return data.map(r=>{
+  return data.map((r,i)=>{
     const cc=CC[r.categorie]||'cat-alte';
     const sc=SC[r.stare]||'s-alt';
     const se=r.expirare&&!r.expirare.includes('1904');
-    // Badge expira curand
     let expBadge='';
     const ts=parseDate(r.expirare);
     if(ts){
@@ -434,13 +433,12 @@ function buildCards(data){
       if(days>0&&days<=90&&r.stare!=='Expirat'&&r.stare!=='Arhivat')
         expBadge='<span class="badge-expira">&#9888; '+days+'z</span>';
     }
-    // Buton copiere link folosind data-attribute
+    const safeIdx = 'doc_'+DATA.indexOf(r);
     const linkHtml = r.link
       ? '<a class="card-link" href="'+r.link+'" target="_blank" rel="noopener" onclick="event.stopPropagation()">&#128279; Deschide</a>'
-        +'<button class="btn-copy" data-url="'+r.link+'" onclick="copyLink(this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>'
+        +'<button class="btn-copy" data-url="'+r.link+'" onclick="event.stopPropagation();copyLink(this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>'
       : '<span class="card-link no-link">F&#259;r&#259; link</span>';
-
-    return '<div class="card" onclick="openModal('+i+')" title="Click pentru fișă detaliată">'
+    return '<div class="card" onclick="openModalByIndex(\''+safeIdx+'\')" title="Click pentru fișă detaliată">'
       +'<div class="card-head">'
       +(r.cod?'<span class="card-cod">'+r.cod+'</span>':'')
       +'<div class="card-title">'+r.denumire+'</div>'
@@ -460,198 +458,69 @@ function buildCards(data){
   }).join('');
 }
 
-function getYears(){
-  const yrs=new Set();
-  DATA.forEach(r=>{
-    const m=r.data.match(/\d{4}/);
-    if(m)yrs.add(m[0]);
-  });
-  return [...yrs].sort().reverse();
-}
-
-function buildYearFilter(){
-  const sel=document.getElementById('f-yr');
-  const yrs=getYears();
-  sel.innerHTML='<option value="">Toti anii</option>';
-  yrs.forEach(y=>{const o=document.createElement('option');o.value=o.textContent=y;sel.appendChild(o);});
-}
-
-function reset(){
-  document.getElementById('srch').value='';
-  ['f-cat','f-st','f-yr'].forEach(id=>document.getElementById(id).value='');
-  render();
-}
-
-
-function exportWord(){
-  const data = isActive() ? fd() : [...DATA].sort((a,b)=>parseDate(b.data)-parseDate(a.data)).slice(0,12);
-  if(!data.length){alert('Nu exista documente de exportat.');return;}
-  const today = new Date().toLocaleDateString('ro-RO');
-
-  // Construiesc descrierea filtrelor pentru subtitlu
-  const parts = [];
-  const qv = document.getElementById('srch').value.trim();
-  const cv = document.getElementById('f-cat').value;
-  const sv = document.getElementById('f-st').value;
-  const yv = document.getElementById('f-yr').value;
-  if(qv) parts.push('Căutare: "'+qv+'"');
-  if(cv) parts.push('Categorie: '+cv);
-  if(sv) parts.push('Stare: '+sv);
-  if(yv) parts.push('Anul aprobării: '+yv);
-  const filterDesc = parts.length ? parts.join(' &nbsp;|&nbsp; ') : 'Ultimele 12 documente aprobate';
-
-  const win = window.open('','_blank');
-  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
-  <title>Registru AMTAP</title>
-  <style>
-    body{font-family:Arial,sans-serif;margin:30px;color:#111}
-    h2{color:#002147;text-align:center;margin-bottom:4px;font-size:16px}
-    h3{color:#002147;text-align:center;font-size:13px;font-weight:normal;margin-bottom:4px}
-    .sub{text-align:center;font-size:11px;color:#555;margin-bottom:6px;padding:6px 12px;background:#f5f8fc;border-radius:4px;display:inline-block}
-    .sub-wrap{text-align:center;margin-bottom:16px}
-    table{width:100%;border-collapse:collapse;font-size:11px}
-    th{background:#002147;color:#fff;padding:7px 6px;text-align:left;font-size:11px}
-    td{padding:6px;border-bottom:1px solid #ddd;vertical-align:top}
-    tr:nth-child(even) td{background:#f5f8fc}
-    .cod{font-weight:bold;white-space:nowrap;color:#002147}
-    .pv{white-space:nowrap;color:#555;font-size:10px}
-    .badge{display:inline-block;padding:2px 6px;border-radius:3px;font-size:10px;font-weight:bold}
-    .vig{background:#D1FAE5;color:#0A6640}
-    .exp{background:#FEE2E2;color:#9B1C1C}
-    .rev{background:#EBF2FF;color:#002147}
-    .arh{background:#F3F4F6;color:#374151}
-    .footer{margin-top:16px;font-size:10px;color:#999;text-align:right;border-top:1px solid #eee;padding-top:8px}
-    @media print{body{margin:15px}}
-  </style></head><body>
-  <h2>Academia de Muzică, Teatru și Arte Plastice</h2>
-  <h3>Registrul actelor normative interne — SMCDC</h3>
-  <div class="sub-wrap"><span class="sub">Filtre aplicate: ${filterDesc} &nbsp;&mdash;&nbsp; Generat la ${today}</span></div>
-  <table>
-    <thead><tr>
-      <th style="width:25px">Nr.</th>
-      <th style="width:65px">Cod</th>
-      <th>Denumire</th>
-      <th style="width:85px">Categorie</th>
-      <th style="width:90px">Nr. PV / Data aprob.</th>
-      <th style="width:75px">Stare</th>
-    </tr></thead>
-    <tbody>
-    ${data.map((r,i)=>{
-      const sc=r.stare==='In vigoare'?'vig':r.stare==='Expirat'?'exp':r.stare==='Revizuit'?'rev':'arh';
-      return `<tr>
-        <td>${i+1}</td>
-        <td class="cod">${r.cod||'&mdash;'}</td>
-        <td>${r.denumire}</td>
-        <td>${r.categorie}</td>
-        <td class="pv">${r.pv||''}<br><span style="color:#888">${r.data||''}</span></td>
-        <td><span class="badge ${sc}">${r.stare}</span></td>
-      </tr>`;
-    }).join('')}
-    </tbody>
-  </table>
-  <div class="footer">Total: ${data.length} documente &nbsp;|&nbsp; Secția Managementul Calității și Dezvoltare Curriculară &mdash; AMTAP</div>
-  <script>window.onload=function(){window.print();}<\/script>
-  </body></html>`);
-  win.document.close();
-}
-
-
-
-let currentView = 'cards';
-
-function setView(v){
-  currentView = v;
-  document.getElementById('btn-cards').classList.toggle('active', v==='cards');
-  document.getElementById('btn-table').classList.toggle('active', v==='table');
-  document.getElementById('grid').style.display = v==='cards' ? 'grid' : 'none';
-  document.getElementById('tbl-wrap').style.display = v==='table' ? 'block' : 'none';
-  render();
-}
-
 function buildTable(data){
-  const tbody = document.getElementById('tbl-body');
-  if(!tbody) return;
-  tbody.innerHTML = data.map((r,i)=>{
-    const sc = SC[r.stare]||'s-alt';
-    const ts = parseDate(r.expirare);
-    let expBadge = '';
+  const tbody=document.getElementById('tbl-body');
+  if(!tbody)return;
+  tbody.innerHTML=data.map((r,i)=>{
+    const sc=SC[r.stare]||'s-alt';
+    const ts=parseDate(r.expirare);
+    let expBadge='';
     if(ts){
-      const now = new Date(); now.setHours(0,0,0,0);
-      const days = Math.ceil((ts-now.getTime())/(1000*60*60*24));
+      const now=new Date();now.setHours(0,0,0,0);
+      const days=Math.ceil((ts-now.getTime())/(1000*60*60*24));
       if(days>0&&days<=90&&r.stare!=='Expirat'&&r.stare!=='Arhivat')
-        expBadge = ' <span class="badge-expira">&#9888; '+days+'z</span>';
+        expBadge=' <span class="badge-expira">&#9888; '+days+'z</span>';
     }
-    return '<tr style="cursor:pointer" onclick="openModal('+i+')" title="Click pentru fișă detaliată">'
-      +'<td style="color:#9CA3AF;font-size:11px">'+( i+1)+'</td>'
+    const safeIdx='doc_'+DATA.indexOf(r);
+    return '<tr style="cursor:pointer" onclick="openModalByIndex(\''+safeIdx+'\')" title="Click pentru fișă detaliată">'
+      +'<td style="color:#9CA3AF;font-size:11px">'+(i+1)+'</td>'
       +'<td>'+(r.cod?'<span class="t-cod">'+r.cod+'</span>':'<span style="color:#ccc">—</span>')+'</td>'
       +'<td class="t-den">'+r.denumire+'</td>'
       +'<td><span class="cat-badge '+(CC[r.categorie]||'cat-alte')+'">'+r.categorie+'</span></td>'
-      +'<td style="white-space:nowrap;font-size:12px;color:#555">'+( r.data||'—')+'</td>'
+      +'<td style="white-space:nowrap;font-size:12px;color:#555">'+(r.data||'—')+'</td>'
       +'<td><span class="stare-tag '+sc+'">'+r.stare+'</span>'+expBadge+'</td>'
       +'<td class="t-actions">'
       +(r.link
-        ?'<a class="t-link" href="'+r.link+'" target="_blank" rel="noopener">&#128279; Deschide</a>'
-         +'<button class="btn-copy" data-url="'+r.link+'" onclick="copyLink(this)" title="Copiaza link">'
-         +'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>'
-         +'</button>'
-        :'<span class="t-link disabled">Fără link</span>')
-      +'</td>'
-      +'</tr>';
+        ?'<a class="t-link" href="'+r.link+'" target="_blank" rel="noopener" onclick="event.stopPropagation()">&#128279; Deschide</a>'
+         +'<button class="btn-copy" data-url="'+r.link+'" onclick="event.stopPropagation();copyLink(this)" title="Copiaza link"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>'
+        :'<span class="t-link disabled">F&#259;r&#259; link</span>')
+      +'</td></tr>';
   }).join('');
 }
 
-
 let currentDoc = null;
 
-function openModal(idx){
-  const r = (currentView==='cards'
-    ? (isActive() ? fd() : [...DATA].sort((a,b)=>parseDate(b.data)-parseDate(a.data)).slice(0,12))
-    : (isActive() ? fd() : [...DATA].sort((a,b)=>parseDate(b.data)-parseDate(a.data)).slice(0,12))
-  )[idx];
+function openModalByIndex(safeIdx){
+  const realIdx = parseInt(safeIdx.replace('doc_',''));
+  const r = DATA[realIdx];
   if(!r) return;
   currentDoc = r;
-
-  document.getElementById('m-cod').textContent = r.cod || '—';
+  document.getElementById('m-cod').textContent = r.cod||'—';
   document.getElementById('m-title').textContent = r.denumire;
-  document.getElementById('m-cat').textContent = r.categorie || '—';
-  document.getElementById('m-editie').textContent = r.editie || '—';
-  document.getElementById('m-data').textContent = r.data || '—';
-  document.getElementById('m-expirare').textContent = r.expirare || '—';
-  document.getElementById('m-pv').textContent = r.pv || '—';
-  document.getElementById('m-struct').textContent = r.structura || '—';
-  document.getElementById('m-persoana').textContent = r.persoana || '—';
-
-  // Stare badge
-  const sc = SC[r.stare]||'s-alt';
-  const stareEl = document.getElementById('m-stare-tag');
-  stareEl.textContent = r.stare;
-  stareEl.className = 'stare-tag ' + sc;
-
-  // Badge expira curand
-  const expBadge = document.getElementById('m-exp-badge');
-  expBadge.innerHTML = '';
-  const ts = parseDate(r.expirare);
+  document.getElementById('m-cat').textContent = r.categorie||'—';
+  document.getElementById('m-editie').textContent = r.editie||'—';
+  document.getElementById('m-data').textContent = r.data||'—';
+  document.getElementById('m-expirare').textContent = r.expirare||'—';
+  document.getElementById('m-pv').textContent = r.pv||'—';
+  document.getElementById('m-struct').textContent = r.structura||'—';
+  document.getElementById('m-persoana').textContent = r.persoana||'—';
+  const sc=SC[r.stare]||'s-alt';
+  const stareEl=document.getElementById('m-stare-tag');
+  stareEl.textContent=r.stare;stareEl.className='stare-tag '+sc;
+  const expBadge=document.getElementById('m-exp-badge');
+  expBadge.innerHTML='';
+  const ts=parseDate(r.expirare);
   if(ts){
-    const now = new Date(); now.setHours(0,0,0,0);
-    const days = Math.ceil((ts-now.getTime())/(1000*60*60*24));
+    const now=new Date();now.setHours(0,0,0,0);
+    const days=Math.ceil((ts-now.getTime())/(1000*60*60*24));
     if(days>0&&days<=90&&r.stare!=='Expirat'&&r.stare!=='Arhivat')
-      expBadge.innerHTML = '<span class="badge-expira" style="font-size:12px;padding:3px 8px;">&#9888; Expiră în '+days+' zile</span>';
+      expBadge.innerHTML='<span class="badge-expira" style="font-size:12px;padding:3px 8px;">&#9888; Expiră în '+days+' zile</span>';
   }
-
-  // Link
-  const linkEl = document.getElementById('m-link');
-  if(r.link){
-    linkEl.href = r.link;
-    linkEl.style.opacity = '1';
-    linkEl.style.pointerEvents = 'auto';
-  } else {
-    linkEl.href = '#';
-    linkEl.style.opacity = '.4';
-    linkEl.style.pointerEvents = 'none';
-  }
-
+  const linkEl=document.getElementById('m-link');
+  if(r.link){linkEl.href=r.link;linkEl.style.opacity='1';linkEl.style.pointerEvents='auto';}
+  else{linkEl.href='#';linkEl.style.opacity='.4';linkEl.style.pointerEvents='none';}
   document.getElementById('modal-overlay').classList.add('open');
-  document.body.style.overflow = 'hidden';
+  document.body.style.overflow='hidden';
 }
 
 function closeModal(e){
