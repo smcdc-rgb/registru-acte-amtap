@@ -154,7 +154,7 @@ const CSV='https://docs.google.com/spreadsheets/d/e/2PACX-1vRvH0CfmR7M2JvPDQ6h1x
 
 function parseCSV(t){return t.split(/\r?\n/).map(l=>{const c=[];let s='',q=0;for(const ch of l){if(ch==='"')q^=1;else if(ch===','&&!q){c.push(s.trim());s='';}else s+=ch;}c.push(s.trim());return c;});}
 function norm(s){const l=(s||'').toLowerCase();if(l.includes('vigoare'))return'In vigoare';if(l.includes('expir'))return'Expirat';if(l.includes('arhiv'))return'Arhivat';if(l.includes('revizuit'))return'Revizuit';return s||'';}
-function parseDate(d){if(!d)return 0;const m2=d.match(/^(\d{2})[.\-](\d{2})[.\-](\d{4})$/);if(m2)return new Date(parseInt(m2[3]),parseInt(m2[2])-1,parseInt(m2[1])).getTime();const m1=d.match(/^(\d{4})[.\-](\d{2})[.\-](\d{2})$/);if(m1)return new Date(parseInt(m1[1]),parseInt(m1[2])-1,parseInt(m1[3])).getTime();return 0;}
+function parseDate(d){if(!d)return 0;d=d.trim();const m2=d.match(/^(\d{1,2})[.\-](\d{1,2})[.\-](\d{4})$/);if(m2){const dy=parseInt(m2[1]),mo=parseInt(m2[2]),yr=parseInt(m2[3]);if(yr>1900&&mo>=1&&mo<=12&&dy>=1&&dy<=31)return new Date(yr,mo-1,dy).getTime();}const m1=d.match(/^(\d{4})[.\-](\d{1,2})[.\-](\d{1,2})$/);if(m1){const yr=parseInt(m1[1]),mo=parseInt(m1[2]),dy=parseInt(m1[3]);if(yr>1900&&mo>=1&&mo<=12&&dy>=1&&dy<=31)return new Date(yr,mo-1,dy).getTime();}return 0;}
 
 const COLORS_CAT=['#002147','#1A56DB','#0A6640','#B8952A','#9B1C1C','#5B21B6','#0E7490','#92400E','#065F46','#1E40AF'];
 const COLORS_STARE={'In vigoare':'#10B981','Expirat':'#EF4444','Revizuit':'#3B82F6','Arhivat':'#9CA3AF','Necunoscut':'#D1D5DB'};
