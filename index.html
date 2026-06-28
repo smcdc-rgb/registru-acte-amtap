@@ -323,9 +323,15 @@ async function load(){
     let resp;
     try{ resp=await fetch(CSV); if(!resp.ok) throw 0; }
     catch(e1){
-      const proxy='https://corsproxy.io/?'+encodeURIComponent(CSV);
-      resp=await fetch(proxy);
-      if(!resp.ok) throw new Error('proxy failed');
+      try{
+        const p1='https://api.allorigins.win/raw?url='+encodeURIComponent(CSV);
+        resp=await fetch(p1);
+        if(!resp.ok) throw 0;
+      } catch(e2){
+        const p2='https://corsproxy.io/?'+encodeURIComponent(CSV);
+        resp=await fetch(p2);
+        if(!resp.ok) throw new Error('all proxies failed');
+      }
     }
     const t=await resp.text();const rows=csv(t);const d=[];
     for(let i=3;i<rows.length;i++){
@@ -609,6 +615,13 @@ document.getElementById('srch').addEventListener('input',render);
 ['f-cat','f-st','f-yr'].forEach(id=>document.getElementById(id).addEventListener('change',render));
 
 // Wrap load pentru a construi filtrul de an dupa incarcarea datelor
+function buildYearFilter(){
+  const sel=document.getElementById('f-yr');
+  if(!sel)return;
+  const yrs=[...new Set(DATA.map(r=>{const m=r.data.match(/\d{4}/);return m?m[0]:null;}).filter(Boolean))].sort().reverse();
+  sel.innerHTML='<option value="">Toti anii</option>';
+  yrs.forEach(y=>{const o=document.createElement('option');o.value=o.textContent=y;sel.appendChild(o);});
+}
 const origShow=show;
 window.show=function(d,msg){origShow(d,msg);buildYearFilter();};
 load();
