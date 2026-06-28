@@ -320,24 +320,34 @@ function show(d,msg){
 
 async function load(){
   try{
-    const r=await fetch(CSV);if(!r.ok)throw 0;
-    const t=await r.text();const rows=csv(t);const d=[];
+    let resp;
+    try{ resp=await fetch(CSV); if(!resp.ok) throw 0; }
+    catch(e1){
+      const proxy='https://corsproxy.io/?'+encodeURIComponent(CSV);
+      resp=await fetch(proxy);
+      if(!resp.ok) throw new Error('proxy failed');
+    }
+    const t=await resp.text();const rows=csv(t);const d=[];
     for(let i=3;i<rows.length;i++){
       const r=rows[i];if(!r||r.length<14)continue;
       const den=(r[1]||'').replace(/\n/g,'').trim();
       const cat=(r[2]||'').replace(/\n/g,'').trim();
       if(!den||!cat)continue;
       const lk=(r[14]||'').trim();
+      const pvVal=(r[8]||'').trim();
       d.push({cod:(r[0]||'').trim(),denumire:den.slice(0,130),categorie:cat,
         editie:(r[3]||'').trim(),persoana:(r[5]||'').trim().slice(0,50),
-        data:(r[7]||'').trim().slice(0,10),pv:(r[8]||'').trim(),
+        data:(r[7]||'').trim().slice(0,10),
+        pv:(pvVal&&pvVal!=='?'&&pvVal!=='???'&&pvVal!=='????'&&pvVal!=='?????')?pvVal:'',
         structura:(r[9]||'').trim(),
         expirare:(r[12]||'').trim().slice(0,10),stare:norm(r[13]),
-        link:lk.startsWith('http')?lk:''});
+        link:(lk.startsWith('http'))?lk:''});
     }
     const now=new Date();
+    console.log('CSV incarcat, documente:', d.length);
     show(d,'Sincronizat la '+now.toLocaleTimeString('ro-RO',{hour:'2-digit',minute:'2-digit'}));
   }catch(e){
+    console.error('Eroare CSV:', e);
     document.querySelector('.sync-dot').style.background='#F59E0B';
     show(FB,'Date locale');
   }
