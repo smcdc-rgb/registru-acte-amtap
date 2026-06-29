@@ -256,21 +256,12 @@ function norm(s){const l=(s||'').toLowerCase();if(l.includes('vigoare'))return'I
 
 function parseDate(d){
   if(!d)return 0;
-  d=d.trim();
-  // Format DD.MM.YYYY sau DD-MM-YYYY
-  const m2=d.match(/^(\d{1,2})[.\-](\d{1,2})[.\-](\d{4})$/);
-  if(m2){
-    const day=parseInt(m2[1]),mon=parseInt(m2[2]),yr=parseInt(m2[3]);
-    if(yr>1900&&mon>=1&&mon<=12&&day>=1&&day<=31)
-      return new Date(yr,mon-1,day).getTime();
-  }
-  // Format YYYY.MM.DD sau YYYY-MM-DD
-  const m1=d.match(/^(\d{4})[.\-](\d{1,2})[.\-](\d{1,2})$/);
-  if(m1){
-    const yr=parseInt(m1[1]),mon=parseInt(m1[2]),day=parseInt(m1[3]);
-    if(yr>1900&&mon>=1&&mon<=12&&day>=1&&day<=31)
-      return new Date(yr,mon-1,day).getTime();
-  }
+  // Format principal: DD.MM.YYYY (ex: 29.04.2031)
+  const m2=d.match(/^(\d{2})[.\-](\d{2})[.\-](\d{4})$/);
+  if(m2)return new Date(parseInt(m2[3]),parseInt(m2[2])-1,parseInt(m2[1])).getTime();
+  // Format alternativ: YYYY.MM.DD (ex: 2031.04.29)
+  const m1=d.match(/^(\d{4})[.\-](\d{2})[.\-](\d{2})$/);
+  if(m1)return new Date(parseInt(m1[1]),parseInt(m1[2])-1,parseInt(m1[3])).getTime();
   return 0;
 }
 
