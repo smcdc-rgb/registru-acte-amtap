@@ -336,113 +336,58 @@ function show(d,msg){
 }
 
 async function load(){
-  try{
-    let resp;
-    try{ resp=await fetch(CSV); if(!resp.ok) throw 0; }
-    catch(e1){
-      try{
-        const p1='https://api.allorigins.win/raw?url='+encodeURIComponent(CSV);
-        resp=await fetch(p1);
-        if(!resp.ok) throw 0;
-      } catch(e2){
-        const p2='https://corsproxy.io/?'+encodeURIComponent(CSV);
-        resp=await fetch(p2);
-        if(!resp.ok) throw new Error('all proxies failed');
-      }
-    }
-    const t=await resp.text();const rows=csv(t);const d=[];
-    for(let i=3;i<rows.length;i++){
-      const r=rows[i];if(!r||r.length<14)continue;
-      const den=(r[1]||'').replace(/\n/g,'').trim();
-      const cat=(r[2]||'').replace(/\n/g,'').trim();
-      if(!den)continue; // sarim doar randurile fara denumire
-      const lk=(r[14]||'').trim();
-      const pvVal=(r[8]||'').trim();
-      d.push({cod:(r[0]||'').trim(),denumire:den.slice(0,130),categorie:cat,
-        editie:(r[3]||'').trim(),persoana:(r[5]||'').trim().slice(0,50),
-        data:(r[7]||'').trim().slice(0,10),
-        pv:(pvVal&&pvVal!=='?'&&pvVal!=='???'&&pvVal!=='????'&&pvVal!=='?????')?pvVal:'',
-        structura:(r[9]||'').trim(),
-        expirare:(r[12]||'').trim().slice(0,10),stare:norm(r[13]),
-        link:(lk.startsWith('http'))?lk:''});
-    }
-    const now=new Date();
-    console.log('CSV incarcat, documente:', d.length);
-    show(d,'Sincronizat la '+now.toLocaleTimeString('ro-RO',{hour:'2-digit',minute:'2-digit'}));
-  }catch(e){
-    console.error('Eroare CSV:', e);
-    document.querySelector('.sync-dot').style.background='#F59E0B';
-    show(FB,'Date locale');
+  // Lista de URL-uri de incercat in ordine
+  const urls=[
+    CSV,
+    'https://api.allorigins.win/raw?url='+encodeURIComponent(CSV),
+    'https://corsproxy.io/?'+encodeURIComponent(CSV),
+    'https://proxy.cors.sh/'+CSV,
+  ];
+  let text=null;
+  for(const url of urls){
+    try{
+      const resp=await Promise.race([
+        fetch(url,{cache:'no-cache'}),
+        new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),8000))
+      ]);
+      if(resp&&resp.ok){text=await resp.text();break;}
+    }catch(e){console.warn('URL failed:',url,e.message);continue;}
   }
-}
-
-function isActive(){
-  return document.getElementById('srch').value.trim()!==''||
-    document.getElementById('f-cat').value!==''||
-    document.getElementById('f-st').value!==''||
-    document.getElementById('f-yr').value!=='';
-}
-
-function fd(){
-  const q=document.getElementById('srch').value.toLowerCase();
-  const fc=document.getElementById('f-cat').value;
-  const fs=document.getElementById('f-st').value;
-  const fy=document.getElementById('f-yr').value;
-  return DATA.filter(r=>{
-    const mq=!q||(r.denumire+r.cod+r.persoana+r.categorie).toLowerCase().includes(q);
-    const mc=!fc||r.categorie===fc;
-    const ms=!fs||r.stare===fs;
-    const my=!fy||r.data.startsWith(fy)||r.data.includes('.'+fy+'.')||r.data.endsWith('.'+fy);
-    return mq&&mc&&ms&&my;
-  });
-}
-
-function render(){
-  const active=isActive();
-  const welcome=document.getElementById('welcome');
-  const grid=document.getElementById('grid');
-  const empty=document.getElementById('empty');
-  const sb=document.getElementById('sb');
-
-  if(!active){
-    // Afisam ultimele 12 documente
-    const last12=[...DATA].sort((a,b)=>parseDate(b.data)-parseDate(a.data)).slice(0,12);
-    welcome.style.display='none';
-    empty.style.display='none';
-    sb.innerHTML='<div class="stat-pill"><strong>'+DATA.length+'</strong>&nbsp;documente total in registru</div>'
-      +'<span class="results-label">Se afiseaza ultimele 12 aprobate</span>';
-    grid.innerHTML=buildCards(last12);
-    buildTable(last12);
+  if(!text){
+    console.error('Toate URL-urile au esuat, se folosesc date locale');
+    document.querySelector('.sync-dot').style.background='#F59E0B';
+    show(FB,'Date locale (offline)');
     return;
   }
-
-  welcome.style.display='none';
-  const data=fd();
-  const v=data.filter(r=>r.stare==='In vigoare').length;
-  const e=data.filter(r=>r.stare==='Expirat').length;
-  const rv=data.filter(r=>r.stare==='Revizuit').length;
-  sb.innerHTML='<div class="stat-pill"><strong>'+data.length+'</strong>&nbsp;rezultate</div>'
-    +'<div class="stat-pill vig"><strong>'+v+'</strong>&nbsp;in vigoare</div>'
-    +'<div class="stat-pill exp"><strong>'+e+'</strong>&nbsp;expirate</div>'
-    +'<div class="stat-pill rev"><strong>'+rv+'</strong>&nbsp;revizuite</div>';
-
-  if(!data.length){grid.innerHTML='';empty.style.display='block';return;}
-  empty.style.display='none';
-  grid.innerHTML=buildCards(data);
-  buildTable(data);
+  try{
+    const rows=csv(text);const d=[];
+    for(let i=3;i<rows.length;i++){
+      const r=rows[i];if(!r||r.length<14)continue;
+      const den=(r[1]||'').replace(/\n/g,'').replace(/\r/g,'').trim();
+      if(!den)continue;
+      const cat=(r[2]||'').replace(/\n/g,'').replace(/\r/g,'').trim();
+      const lk=(r[14]||'').trim();
+      const pvVal=(r[8]||'').trim();
+      d.push({
+        cod:(r[0]||'').trim(),
+        denumire:den.slice(0,130),
+        categorie:cat||'Altele',
+        editie:(r[3]||'').trim(),
+        persoana:(r[5]||'').trim().slice(0,50),
+        data:(r[7]||'').trim().slice(0,10),
+        pv:(pvVal&&!pvVal.includes('?'))?pvVal:'',
+        structura:(r[9]||'').trim(),
+        expirare:(r[12]||'').trim().slice(0,10),
+        stare:norm(r[13]),
+        link:lk.startsWith('http')?lk:''
+      });
+    }
+    console.log('CSV incarcat, documente:',d.length);
+    const now=new Date();
+    show(d,'Sincronizat la '+now.toLocaleTimeString('ro-RO',{hour:'2-digit',minute:'2-digit'}));
+  }catch(e){
+    console.error('Eroare parsare CSV:',e);
+    show(FB,'Date locale (eroare parsare)');
+  }
 }
-
-function copyLink(btn){
-  const url = btn.getAttribute('data-url');
-  if(!url){alert('Acest document nu are link asociat.');return;}
-  const doCopy = ()=>{
-    btn.innerHTML = '✓';
-    btn.classList.add('copied');
-    setTimeout(()=>{btn.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';btn.classList.remove('copied');},2000);
-  };
-  if(navigator.clipboard){
-    navigator.clipboard.writeText(url).then(doCopy).catch(()=>{
-      const ta=document.createElement('textarea');ta.value=url;
-      document.body.appendChild(ta);ta.select();document.execCommand('copy');
-      document.body.removeChild(ta);doCopy();
-    });
+>
