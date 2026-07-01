@@ -247,8 +247,7 @@ let DATA=[];
 let currentView='cards';
 let currentDoc=null;
 
-function csv(t){return t.split(/
-?
+function csv(t){return t.split(/?
 /).map(l=>{const c=[];let s='',q=0;for(const ch of l){if(ch==='"')q^=1;else if(ch===','&&!q){c.push(s.trim());s='';}else s+=ch;}c.push(s.trim());return c;});}
 function norm(s){const l=(s||'').toLowerCase();if(l.includes('vigoare'))return'In vigoare';if(l.includes('expir'))return'Expirat';if(l.includes('arhiv'))return'Arhivat';if(l.includes('revizuit'))return'Revizuit';return s||'';}
 function parseDate(d){
