@@ -170,7 +170,7 @@ async function loadData(){
     const t=await resp.text();
     const rows=parseCSV(t);
     const data=[];
-    for(let i=3;i<rows.length;i++){
+    for(let i=1;i<rows.length;i++){
       const r=rows[i];if(!r||r.length<14)continue;
       const den=(r[1]||'').replace(/\n/g,'').trim();
       const cat=(r[2]||'').replace(/\n/g,'').trim();
