@@ -476,7 +476,7 @@ function exportPDF(){
     '<table><thead><tr><th>#</th><th>Cod</th><th>Denumire</th><th>Categorie</th><th>Nr. PV / Data</th><th>Stare</th></tr></thead><tbody>'+
     data.map(function(r,i){
       var sc=r.stare==='In vigoare'?'vig':r.stare==='Expirat'?'exp':r.stare==='Revizuit'?'rev':'arh';
-      return '<tr><td>'+(i+1)+'</td><td class="cod">'+(r.cod||'—')+'</td><td>'+r.denumire+'</td><td>'+r.categorie+'</td><td class="cod" style="font-size:10px">'+(r.pv||'')+(r.pv&&r.data?' / ':''+(r.data||''))+'</td><td><span class="badge '+sc+'">'+r.stare+'</span></td></tr>';
+      return '<tr><td>'+(i+1)+'</td><td class="cod">'+(r.cod||'—')+'</td><td>'+r.denumire+'</td><td>'+r.categorie+'</td><td class="cod" style="font-size:10px">'+(r.pv||'')+(r.pv&&r.data?'<br>'+r.data:r.data||'')+'</td><td><span class="badge '+sc+'">'+r.stare+'</span></td></tr>';
     }).join('')+
     '</tbody></table><div class="footer">Total: '+data.length+' doc. | AMTAP</div>'+
     '<scr'+'ipt>window.onload=function(){window.print();}</'+'script></body></html>');
