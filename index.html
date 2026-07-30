@@ -272,7 +272,7 @@ function initApp(data, syncMsg){
   cats.forEach(function(c){var o=document.createElement('option');o.value=o.textContent=c;fc.appendChild(o);});
   var yrs=[...new Set(data.map(function(r){var m=(r.data||'').match(/[0-9]{4}/);return m?m[0]:null;}).filter(Boolean))].sort().reverse();
   var sel=document.getElementById('f-yr');
-  sel.innerHTML='<option value="">Toți anii</option>';
+  sel.innerHTML='<option value="">Toşi anii</option>';
   yrs.forEach(function(y){var o=document.createElement('option');o.value=o.textContent=y;sel.appendChild(o);});
   document.getElementById('sync-t').textContent=syncMsg;
   document.getElementById('fc').textContent=data.length+' documente in registru';
